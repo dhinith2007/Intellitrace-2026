@@ -537,7 +537,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 
   <!-- STORY 6 -->
   <div class="sp" style="border-color:rgba(255,0,255,.4)">
-    <div class="stitle" style="color:var(--purple)" FRAUD #6 (NEW) — Circular Loop: Alpha → Beta → Gamma → Alpha</div>
+    <div class="stitle" style="color:var(--purple)"> FRAUD #6 (NEW) — Circular Loop: Alpha → Beta → Gamma → Alpha</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:12px;font-family:'Share Tech Mono',monospace">
       2025-07-02 15:00–15:10 · IP: 192.168.1.1 · OnePlus 11 · cyclic fund laundering
     </div>
