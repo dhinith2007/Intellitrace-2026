@@ -1,0 +1,548 @@
+[
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB39958838",
+    "senders": [
+      "SB77827638",
+      "SB70291817",
+      "SB85329037",
+      "SB39958838",
+      "SB89089901"
+    ],
+    "sender_count": 5,
+    "avg_account_age": 432.0,
+    "avg_churn": 0.159,
+    "risk_score": 95.0,
+    "description": "5 mule accounts funnel funds into SB39958838. Avg account age: 432 days. Avg churn: 0.16"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB22575562",
+    "senders": [
+      "SB39587039",
+      "SB70291817",
+      "SB66306997",
+      "SB23756669",
+      "SB39345092"
+    ],
+    "sender_count": 5,
+    "avg_account_age": 684.6,
+    "avg_churn": 0.213,
+    "risk_score": 95.0,
+    "description": "5 mule accounts funnel funds into SB22575562. Avg account age: 685 days. Avg churn: 0.21"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB89089901",
+    "senders": [
+      "SB13561597",
+      "SB77827638",
+      "SB66629388",
+      "SB97226012",
+      "SB85329037",
+      "SB41227216",
+      "SB23756669"
+    ],
+    "sender_count": 7,
+    "avg_account_age": 387.3,
+    "avg_churn": 0.157,
+    "risk_score": 95.0,
+    "description": "7 mule accounts funnel funds into SB89089901. Avg account age: 387 days. Avg churn: 0.16"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB66629388",
+    "senders": [
+      "SB83197857",
+      "SB14265799",
+      "SB13561597",
+      "SB66306997",
+      "SB85329037",
+      "SB83140807",
+      "SB89254563"
+    ],
+    "sender_count": 7,
+    "avg_account_age": 515.4,
+    "avg_churn": 0.207,
+    "risk_score": 95.0,
+    "description": "7 mule accounts funnel funds into SB66629388. Avg account age: 515 days. Avg churn: 0.21"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB28728463",
+    "senders": [
+      "SB42868828",
+      "SB70291817",
+      "SB36687537"
+    ],
+    "sender_count": 3,
+    "avg_account_age": 572.0,
+    "avg_churn": 0.138,
+    "risk_score": 95.0,
+    "description": "3 mule accounts funnel funds into SB28728463. Avg account age: 572 days. Avg churn: 0.14"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB13561597",
+    "senders": [
+      "SB47338124",
+      "SB14265799",
+      "SB83197857",
+      "SB13999315",
+      "SB90801586",
+      "SB13561597",
+      "SB95822412",
+      "SB23756669"
+    ],
+    "sender_count": 8,
+    "avg_account_age": 497.6,
+    "avg_churn": 0.306,
+    "risk_score": 95.0,
+    "description": "8 mule accounts funnel funds into SB13561597. Avg account age: 498 days. Avg churn: 0.31"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB39587039",
+    "senders": [
+      "SB28728463",
+      "SB47338124",
+      "SB13356886",
+      "SB77827638",
+      "SB70291817",
+      "SB85329037",
+      "SB39958838",
+      "SB23756669",
+      "SB39345092"
+    ],
+    "sender_count": 9,
+    "avg_account_age": 507.3,
+    "avg_churn": 0.187,
+    "risk_score": 95.0,
+    "description": "9 mule accounts funnel funds into SB39587039. Avg account age: 507 days. Avg churn: 0.19"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB89254563",
+    "senders": [
+      "SB83197857",
+      "SB14265799",
+      "SB13356886",
+      "SB39587039",
+      "SB13561597",
+      "SB66629388",
+      "SB77827638",
+      "SB70291817",
+      "SB42868828",
+      "SB89254563"
+    ],
+    "sender_count": 10,
+    "avg_account_age": 446.7,
+    "avg_churn": 0.148,
+    "risk_score": 95.0,
+    "description": "10 mule accounts funnel funds into SB89254563. Avg account age: 447 days. Avg churn: 0.15"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB36687537",
+    "senders": [
+      "SB28728463",
+      "SB14265799",
+      "SB39587039",
+      "SB13999315",
+      "SB66629388",
+      "SB85329037",
+      "SB89089901",
+      "SB23756669"
+    ],
+    "sender_count": 8,
+    "avg_account_age": 477.8,
+    "avg_churn": 0.143,
+    "risk_score": 95.0,
+    "description": "8 mule accounts funnel funds into SB36687537. Avg account age: 478 days. Avg churn: 0.14"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB46913810",
+    "senders": [
+      "SB13356886",
+      "SB77827638",
+      "SB39958838",
+      "SB22575562",
+      "SB39345092"
+    ],
+    "sender_count": 5,
+    "avg_account_age": 307.8,
+    "avg_churn": 0.136,
+    "risk_score": 95.0,
+    "description": "5 mule accounts funnel funds into SB46913810. Avg account age: 308 days. Avg churn: 0.14"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB39345092",
+    "senders": [
+      "SB47338124",
+      "SB77827638",
+      "SB13999315",
+      "SB66629388"
+    ],
+    "sender_count": 4,
+    "avg_account_age": 435.8,
+    "avg_churn": 0.297,
+    "risk_score": 95.0,
+    "description": "4 mule accounts funnel funds into SB39345092. Avg account age: 436 days. Avg churn: 0.30"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB42868828",
+    "senders": [
+      "SB47338124",
+      "SB77827638",
+      "SB24942603",
+      "SB66629388",
+      "SB39958838",
+      "SB83140807",
+      "SB23756669"
+    ],
+    "sender_count": 7,
+    "avg_account_age": 502.1,
+    "avg_churn": 0.23,
+    "risk_score": 95.0,
+    "description": "7 mule accounts funnel funds into SB42868828. Avg account age: 502 days. Avg churn: 0.23"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB66306997",
+    "senders": [
+      "SB46913810",
+      "SB14265799",
+      "SB83197857",
+      "SB13561597",
+      "SB95822412",
+      "SB85329037",
+      "SB42868828",
+      "SB22575562"
+    ],
+    "sender_count": 8,
+    "avg_account_age": 411.5,
+    "avg_churn": 0.209,
+    "risk_score": 95.0,
+    "description": "8 mule accounts funnel funds into SB66306997. Avg account age: 412 days. Avg churn: 0.21"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB83197857",
+    "senders": [
+      "SB83197857",
+      "SB13356886",
+      "SB90801586",
+      "SB36687537",
+      "SB77827638",
+      "SB24942603",
+      "SB97226012",
+      "SB39958838",
+      "SB85329037",
+      "SB21668732",
+      "SB89254563",
+      "SB22575562"
+    ],
+    "sender_count": 12,
+    "avg_account_age": 363.5,
+    "avg_churn": 0.16,
+    "risk_score": 95.0,
+    "description": "12 mule accounts funnel funds into SB83197857. Avg account age: 364 days. Avg churn: 0.16"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB24942603",
+    "senders": [
+      "SB13356886",
+      "SB36687537",
+      "SB95822412",
+      "SB97226012",
+      "SB39958838",
+      "SB66306997",
+      "SB89254563"
+    ],
+    "sender_count": 7,
+    "avg_account_age": 425.3,
+    "avg_churn": 0.293,
+    "risk_score": 95.0,
+    "description": "7 mule accounts funnel funds into SB24942603. Avg account age: 425 days. Avg churn: 0.29"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB13356886",
+    "senders": [
+      "SB14265799",
+      "SB39587039",
+      "SB13999315",
+      "SB66629388",
+      "SB24942603",
+      "SB41227216",
+      "SB21668732",
+      "SB42868828"
+    ],
+    "sender_count": 8,
+    "avg_account_age": 507.5,
+    "avg_churn": 0.183,
+    "risk_score": 95.0,
+    "description": "8 mule accounts funnel funds into SB13356886. Avg account age: 508 days. Avg churn: 0.18"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB97226012",
+    "senders": [
+      "SB28728463",
+      "SB13356886",
+      "SB14265799",
+      "SB97226012",
+      "SB85329037",
+      "SB21668732",
+      "SB42868828"
+    ],
+    "sender_count": 7,
+    "avg_account_age": 472.4,
+    "avg_churn": 0.144,
+    "risk_score": 95.0,
+    "description": "7 mule accounts funnel funds into SB97226012. Avg account age: 472 days. Avg churn: 0.14"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB10872248",
+    "senders": [
+      "SB83197857",
+      "SB13999315",
+      "SB95822412",
+      "SB77827638",
+      "SB21668732",
+      "SB83140807",
+      "SB22575562"
+    ],
+    "sender_count": 7,
+    "avg_account_age": 335.7,
+    "avg_churn": 0.347,
+    "risk_score": 95.0,
+    "description": "7 mule accounts funnel funds into SB10872248. Avg account age: 336 days. Avg churn: 0.35"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB77827638",
+    "senders": [
+      "SB22575562",
+      "SB90801586",
+      "SB36687537"
+    ],
+    "sender_count": 3,
+    "avg_account_age": 277.3,
+    "avg_churn": 0.124,
+    "risk_score": 95.0,
+    "description": "3 mule accounts funnel funds into SB77827638. Avg account age: 277 days. Avg churn: 0.12"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB85329037",
+    "senders": [
+      "SB14265799",
+      "SB36687537",
+      "SB10872248",
+      "SB97226012",
+      "SB85329037",
+      "SB89254563"
+    ],
+    "sender_count": 6,
+    "avg_account_age": 445.3,
+    "avg_churn": 0.13,
+    "risk_score": 95.0,
+    "description": "6 mule accounts funnel funds into SB85329037. Avg account age: 445 days. Avg churn: 0.13"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB83140807",
+    "senders": [
+      "SB13999315",
+      "SB66629388",
+      "SB85329037",
+      "SB41227216",
+      "SB83140807",
+      "SB21668732"
+    ],
+    "sender_count": 6,
+    "avg_account_age": 411.8,
+    "avg_churn": 0.238,
+    "risk_score": 95.0,
+    "description": "6 mule accounts funnel funds into SB83140807. Avg account age: 412 days. Avg churn: 0.24"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB23756669",
+    "senders": [
+      "SB83197857",
+      "SB90801586",
+      "SB24942603",
+      "SB97226012",
+      "SB85329037",
+      "SB41227216",
+      "SB66306997",
+      "SB89254563",
+      "SB83140807"
+    ],
+    "sender_count": 9,
+    "avg_account_age": 438.2,
+    "avg_churn": 0.204,
+    "risk_score": 95.0,
+    "description": "9 mule accounts funnel funds into SB23756669. Avg account age: 438 days. Avg churn: 0.20"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB47338124",
+    "senders": [
+      "SB47338124",
+      "SB36687537",
+      "SB24942603",
+      "SB39958838",
+      "SB85329037",
+      "SB83140807",
+      "SB89254563"
+    ],
+    "sender_count": 7,
+    "avg_account_age": 483.9,
+    "avg_churn": 0.212,
+    "risk_score": 95.0,
+    "description": "7 mule accounts funnel funds into SB47338124. Avg account age: 484 days. Avg churn: 0.21"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB70291817",
+    "senders": [
+      "SB14265799",
+      "SB39587039",
+      "SB77827638",
+      "SB85329037",
+      "SB83140807",
+      "SB42868828"
+    ],
+    "sender_count": 6,
+    "avg_account_age": 399.0,
+    "avg_churn": 0.17,
+    "risk_score": 95.0,
+    "description": "6 mule accounts funnel funds into SB70291817. Avg account age: 399 days. Avg churn: 0.17"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB90801586",
+    "senders": [
+      "SB83197857",
+      "SB90801586",
+      "SB95822412",
+      "SB97226012",
+      "SB23756669",
+      "SB39345092"
+    ],
+    "sender_count": 6,
+    "avg_account_age": 361.5,
+    "avg_churn": 0.269,
+    "risk_score": 95.0,
+    "description": "6 mule accounts funnel funds into SB90801586. Avg account age: 362 days. Avg churn: 0.27"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB13999315",
+    "senders": [
+      "SB28728463",
+      "SB83197857",
+      "SB13356886",
+      "SB13999315",
+      "SB89254563",
+      "SB83140807",
+      "SB42868828"
+    ],
+    "sender_count": 7,
+    "avg_account_age": 358.1,
+    "avg_churn": 0.183,
+    "risk_score": 95.0,
+    "description": "7 mule accounts funnel funds into SB13999315. Avg account age: 358 days. Avg churn: 0.18"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB95822412",
+    "senders": [
+      "SB46913810",
+      "SB95822412",
+      "SB66629388",
+      "SB24942603",
+      "SB70291817"
+    ],
+    "sender_count": 5,
+    "avg_account_age": 525.6,
+    "avg_churn": 0.297,
+    "risk_score": 95.0,
+    "description": "5 mule accounts funnel funds into SB95822412. Avg account age: 526 days. Avg churn: 0.30"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB41227216",
+    "senders": [
+      "SB13356886",
+      "SB66629388",
+      "SB97226012",
+      "SB70291817",
+      "SB66306997",
+      "SB89089901",
+      "SB22575562"
+    ],
+    "sender_count": 7,
+    "avg_account_age": 538.6,
+    "avg_churn": 0.167,
+    "risk_score": 95.0,
+    "description": "7 mule accounts funnel funds into SB41227216. Avg account age: 539 days. Avg churn: 0.17"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB14265799",
+    "senders": [
+      "SB83197857",
+      "SB97226012",
+      "SB39958838",
+      "SB23756669",
+      "SB22575562"
+    ],
+    "sender_count": 5,
+    "avg_account_age": 441.6,
+    "avg_churn": 0.12,
+    "risk_score": 95.0,
+    "description": "5 mule accounts funnel funds into SB14265799. Avg account age: 442 days. Avg churn: 0.12"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "SB21668732",
+    "senders": [
+      "SB13356886",
+      "SB97226012",
+      "SB70291817"
+    ],
+    "sender_count": 3,
+    "avg_account_age": 572.0,
+    "avg_churn": 0.138,
+    "risk_score": 95.0,
+    "description": "3 mule accounts funnel funds into SB21668732. Avg account age: 572 days. Avg churn: 0.14"
+  },
+  {
+    "type": "Mule Collection (Fan-In)",
+    "collector": "COLL_ACC_01",
+    "senders": [
+      "MULE_ACC_7",
+      "MULE_ACC_1",
+      "MULE_ACC_0",
+      "MULE_ACC_3",
+      "MULE_ACC_4",
+      "MULE_ACC_5",
+      "MULE_ACC_6",
+      "MULE_ACC_2"
+    ],
+    "sender_count": 8,
+    "avg_account_age": 5.0,
+    "avg_churn": 0.934,
+    "risk_score": 95.0,
+    "description": "8 mule accounts funnel funds into COLL_ACC_01. Avg account age: 5 days. Avg churn: 0.93"
+  }
+]

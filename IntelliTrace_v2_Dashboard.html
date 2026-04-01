@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>IntelliTrace 2026 v2 — Mule Account Detection</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;600;800&display=swap');
+:root{
+  --bg:#040c14;--bg2:#071420;--bg3:#0a1d2e;
+  --panel:#0d2035;--panel2:#0f2540;
+  --border:#1a4060;--border2:#1e4f78;
+  --accent:#00d4ff;--accent2:#00ff9d;
+  --danger:#ff3c5a;--warn:#ffb700;--orange:#ff6a00;
+  --purple:#cc44ff;--pink:#c864ff;
+  --text:#c8e8ff;--text2:#7aadcc;--text3:#4a7a9a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.012) 2px,rgba(0,212,255,.012) 4px);
+  pointer-events:none;z-index:9999;}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 24px;background:linear-gradient(90deg,#040c14,#071e35 50%,#040c14);
+  border-bottom:1px solid var(--border2);position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 30px rgba(0,212,255,.12);}
+.brand{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;
+  color:var(--accent);letter-spacing:2px;}
+.sub{font-size:9px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);
+  display:inline-block;margin-right:5px;
+  animation:blink 1.2s ease-in-out infinite;box-shadow:0 0 8px var(--accent2);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hstat{text-align:center;}
+.hstat .v{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:800;display:block;}
+.hstat .l{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;}
+
+/* NAV */
+.nav{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 18px;overflow-x:auto;}
+.nt{padding:9px 18px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;
+  font-weight:600;letter-spacing:1px;color:var(--text3);border-bottom:3px solid transparent;
+  transition:all .2s;text-transform:uppercase;white-space:nowrap;}
+.nt.active{color:var(--accent);border-bottom-color:var(--accent);
+  background:linear-gradient(180deg,transparent,rgba(0,212,255,.05));}
+.nt:hover{color:var(--text);}
+
+.main{padding:14px 18px;}
+.tab{display:none;}.tab.active{display:block;}
+
+/* KPI STRIP */
+.kpi-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:12px;}
+.kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;position:relative;overflow:hidden;transition:border-color .3s;}
+.kpi:hover{border-color:var(--accent);}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.red::before{background:linear-gradient(90deg,var(--danger),transparent);}
+.kpi.blue::before{background:linear-gradient(90deg,var(--accent),transparent);}
+.kpi.green::before{background:linear-gradient(90deg,var(--accent2),transparent);}
+.kpi.yellow::before{background:linear-gradient(90deg,var(--warn),transparent);}
+.kpi.orange::before{background:linear-gradient(90deg,var(--orange),transparent);}
+.kpi.purple::before{background:linear-gradient(90deg,var(--purple),transparent);}
+.kpi.pink::before{background:linear-gradient(90deg,var(--pink),transparent);}
+.kpi-v{font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:800;line-height:1;}
+.kpi.red .kpi-v{color:var(--danger);}.kpi.blue .kpi-v{color:var(--accent);}
+.kpi.green .kpi-v{color:var(--accent2);}.kpi.yellow .kpi-v{color:var(--warn);}
+.kpi.orange .kpi-v{color:var(--orange);}.kpi.purple .kpi-v{color:var(--purple);}
+.kpi.pink .kpi-v{color:var(--pink);}
+.kpi-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;}
+.kpi-s{font-size:9px;color:var(--text3);margin-top:1px;font-family:'Share Tech Mono',monospace;}
+
+/* PANELS */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.ph{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;background:var(--panel2);border-bottom:1px solid var(--border);}
+.pt{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--accent);}
+.pb{padding:12px;}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.gw{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:10px;}
+
+/* ALERTS */
+.afeed{max-height:320px;overflow-y:auto;}
+.arow{display:flex;gap:8px;align-items:flex-start;padding:9px 12px;
+  border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s;}
+.arow:hover{background:rgba(0,212,255,.04);}
+.adot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.adot.crit{background:var(--danger);box-shadow:0 0 6px var(--danger);}
+.adot.high{background:var(--warn);box-shadow:0 0 4px var(--warn);}
+.atitle{font-size:12px;font-weight:600;color:var(--text);}
+.ameta{font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;}
+.ascore{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--danger);}
+
+/* BARS */
+.ftype-item{margin-bottom:9px;}
+.ftype-hdr{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;color:var(--text2);}
+.btrack{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.bfill{height:100%;border-radius:3px;transition:width 1.5s ease;}
+
+/* GRAPH */
+#gc{width:100%;height:440px;background:radial-gradient(ellipse at center,#0a1d30,#040c14);
+  border-radius:8px;position:relative;overflow:hidden;}
+#gc svg{width:100%;height:100%;}
+.gleg{display:flex;gap:10px;padding:7px 12px;border-top:1px solid var(--border);
+  background:var(--bg2);flex-wrap:wrap;}
+.gli{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);}
+.gld{width:10px;height:10px;border-radius:50%;}
+
+/* NODE TOOLTIP */
+#ntt{position:absolute;background:var(--panel2);border:1px solid var(--border2);
+  border-radius:8px;padding:9px 13px;font-size:11px;pointer-events:none;
+  z-index:50;min-width:200px;box-shadow:0 4px 20px rgba(0,0,0,.5);display:none;}
+.ntt-title{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  color:var(--accent);margin-bottom:5px;}
+.ntt-row{display:flex;justify-content:space-between;gap:12px;
+  margin-bottom:2px;color:var(--text3);font-size:10px;}
+.ntt-row span{color:var(--text);}
+
+/* TABLE */
+.tw{max-height:440px;overflow-y:auto;}
+.dt{width:100%;border-collapse:collapse;}
+.dt th{padding:7px 8px;text-align:left;font-size:9px;text-transform:uppercase;
+  letter-spacing:1.2px;color:var(--text3);font-weight:600;
+  border-bottom:1px solid var(--border2);position:sticky;top:0;
+  background:var(--panel2);white-space:nowrap;}
+.dt td{padding:5px 8px;font-size:10px;border-bottom:1px solid rgba(26,64,96,.4);
+  font-family:'Share Tech Mono',monospace;vertical-align:middle;}
+.dt tr:hover td{background:rgba(0,212,255,.03);}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;
+  font-weight:600;font-family:'Rajdhani',sans-serif;}
+.b-N{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.25);}
+.b-MC{background:rgba(255,183,0,.15);color:var(--warn);border:1px solid rgba(255,183,0,.3);}
+.b-SD{background:rgba(200,100,255,.15);color:var(--pink);border:1px solid rgba(200,100,255,.3);}
+.b-HV{background:rgba(255,60,90,.2);color:var(--danger);border:1px solid rgba(255,60,90,.4);}
+.b-CC{background:rgba(0,212,255,.15);color:var(--accent);border:1px solid rgba(0,212,255,.3);}
+.b-MX{background:rgba(255,106,0,.2);color:var(--orange);border:1px solid rgba(255,106,0,.4);}
+.b-CL{background:rgba(204,68,255,.15);color:var(--purple);border:1px solid rgba(204,68,255,.3);}
+
+/* SIGNALS */
+.sigrow{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);}
+.sigicon{font-size:16px;width:26px;text-align:center;}
+.siginfo{flex:1;}
+.signame{font-size:11px;color:var(--text);}
+.sigdesc{font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;}
+.sigval{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;}
+
+/* STORIES */
+.sp{background:linear-gradient(135deg,#0d1f2f,#0a1520);
+  border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:10px;
+  position:relative;overflow:hidden;}
+.sp::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--danger),var(--warn),var(--danger));
+  animation:scan 3s linear infinite;background-size:200% 100%;}
+@keyframes scan{0%{background-position:0%}100%{background-position:200%}}
+.stitle{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;
+  color:var(--danger);margin-bottom:8px;}
+.chain{display:flex;align-items:center;flex-wrap:wrap;margin-bottom:10px;gap:0;}
+.cn{background:var(--panel2);border:1px solid var(--border2);border-radius:6px;
+  padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent);}
+.cn.atm{border-color:var(--danger);color:var(--danger);}
+.ca{color:var(--warn);font-size:14px;padding:0 4px;}
+.ct{font-size:9px;color:var(--text3);display:block;margin-top:1px;}
+.sfacts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.fact{background:var(--bg3);border-radius:6px;padding:7px;border-left:3px solid var(--danger);}
+.factv{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--danger);}
+.factl{font-size:9px;color:var(--text3);}
+
+/* CHATBOT */
+.chatwrap{display:flex;flex-direction:column;height:460px;}
+.chatmsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;}
+.cmsg{max-width:82%;padding:9px 13px;border-radius:10px;font-size:12px;
+  line-height:1.6;animation:mi .3s ease;}
+@keyframes mi{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.cmsg.bot{background:var(--panel2);border:1px solid var(--border2);align-self:flex-start;}
+.cmsg.user{background:linear-gradient(135deg,#0a2a45,#0d3558);
+  border:1px solid var(--accent);align-self:flex-end;color:var(--accent);}
+.cmsender{font-size:9px;font-weight:700;letter-spacing:1px;margin-bottom:3px;text-transform:uppercase;}
+.cmsender.bot{color:var(--accent2);}.cmsender.user{color:var(--accent);}
+.cinput-area{display:flex;gap:8px;padding:9px 12px;
+  border-top:1px solid var(--border);background:var(--bg2);}
+.cinput{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;
+  padding:7px 11px;color:var(--text);font-size:12px;font-family:'Exo 2',sans-serif;outline:none;}
+.cinput:focus{border-color:var(--accent);}
+.csend{background:linear-gradient(135deg,#0a3a5a,#0d4a7a);border:1px solid var(--accent);
+  color:var(--accent);padding:7px 14px;border-radius:6px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;transition:all .2s;}
+.csend:hover{background:rgba(0,212,255,.15);}
+.qbwrap{display:flex;gap:5px;flex-wrap:wrap;padding:7px 12px;
+  border-bottom:1px solid var(--border);background:var(--bg2);}
+.qb{background:var(--bg3);border:1px solid var(--border2);color:var(--text3);
+  border-radius:4px;padding:4px 9px;font-size:9px;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;transition:all .2s;}
+.qb:hover{border-color:var(--accent);color:var(--accent);}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--accent2);
+  display:inline-block;animation:dot 1.2s ease-in-out infinite;}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════════════════════ -->
+<div class="header">
+  <div>
+    <div class="brand">IntelliTrace <span style="font-size:12px;opacity:.6">v2.0</span></div>
+    <div class="sub">Enhanced Mule Detection · Cyber Dynamos · 2026</div>
+  </div>
+  <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace">
+    <span class="live-dot"></span>LIVE &nbsp;|&nbsp; <span id="clock">--:--:--</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:center">
+    <div class="hstat"><span class="v" style="color:var(--danger)">29</span><span class="l">Alerts</span></div>
+    <div class="hstat"><span class="v" style="color:var(--warn)">95.0</span><span class="l">Peak Risk</span></div>
+    <div class="hstat"><span class="v" style="color:var(--accent)">229</span><span class="l">Txns</span></div>
+    <div class="hstat"><span class="v" style="color:var(--orange)">6</span><span class="l">Patterns</span></div>
+  </div>
+</div>
+
+<!-- ═══ NAV ══════════════════════════════════════════════════════════════════ -->
+<div class="nav">
+  <div class="nt active" onclick="showTab('overview',this)">📊 Overview</div>
+  <div class="nt" onclick="showTab('graph',this)">🕸 Graph Intelligence</div>
+  <div class="nt" onclick="showTab('transactions',this)">📋 Transactions</div>
+  <div class="nt" onclick="showTab('signals',this)">⚡ Signal Analysis</div>
+  <div class="nt" onclick="showTab('stories',this)">🔥 Fraud Stories</div>
+  <div class="nt" onclick="showTab('chatbot',this)">🤖 AI Assistant</div>
+</div>
+
+<div class="main">
+
+<!-- ═══════════════════════════════════════════════════════════ OVERVIEW TAB -->
+<div class="tab active" id="tab-overview">
+  <div class="kpi-strip">
+    <div class="kpi red"><div class="kpi-v">29</div><div class="kpi-l">Fraud Alerts</div><div class="kpi-s">6 pattern types</div></div>
+    <div class="kpi blue"><div class="kpi-v">229</div><div class="kpi-l">Total Txns</div><div class="kpi-s">200 normal + 29</div></div>
+    <div class="kpi yellow"><div class="kpi-v">95.0</div><div class="kpi-l">Peak Risk</div><div class="kpi-s">Cross Channel</div></div>
+    <div class="kpi green"><div class="kpi-v">91.7%</div><div class="kpi-l">Detect Rate</div><div class="kpi-s">vs 76% baseline</div></div>
+    <div class="kpi orange"><div class="kpi-v">8</div><div class="kpi-l">Fan-In Mules</div><div class="kpi-s">→ COLL_ACC_01</div></div>
+    <div class="kpi purple"><div class="kpi-v">A→B→C→A</div><div class="kpi-l">Circular Loop</div><div class="kpi-s">3-node cycle</div></div>
+    <div class="kpi pink"><div class="kpi-v">0.94</div><div class="kpi-l">Avg Churn</div><div class="kpi-s">fraud accounts</div></div>
+  </div>
+  <div class="gw">
+    <div class="panel">
+      <div class="ph"><div class="pt">🚨 Live Alert Feed</div>
+        <span style="font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace">29 ACTIVE</span>
+      </div>
+      <div class="afeed" id="alert-feed"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="panel">
+        <div class="ph"><div class="pt">📊 Fraud Breakdown</div></div>
+        <div class="pb" id="breakdown"></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><div class="pt">🧮 Risk Matrix</div></div>
+        <div class="pb">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="background:var(--bg3);border-radius:6px;padding:10px;text-align:center">
+              <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--danger)">12.7%</div>
+              <div style="font-size:9px;color:var(--text3)">FRAUD RATE</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:6px;padding:10px;text-align:center">
+              <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--warn)">91.7%</div>
+              <div style="font-size:9px;color:var(--text3)">DETECT RATE</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:6px;padding:10px;text-align:center">
+              <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--orange)">5d</div>
+              <div style="font-size:9px;color:var(--text3)">MIN ACCT AGE</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:6px;padding:10px;text-align:center">
+              <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--accent)">2.4s</div>
+              <div style="font-size:9px;color:var(--text3)">AVG DETECT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ GRAPH TAB -->
+<div class="tab" id="tab-graph">
+  <div class="panel" style="margin-bottom:10px">
+    <div class="ph">
+      <div class="pt">🕸 Transaction Graph — 6 Fraud Patterns</div>
+      <div style="display:flex;gap:5px">
+        <button class="qb" onclick="resetG()">Reset</button>
+        <button class="qb" onclick="hiAll()">All Fraud</button>
+        <button class="qb" onclick="hiFanIn()">🟠 Fan-In</button>
+        <button class="qb" onclick="hiLoop()">🟣 Loop</button>
+        <button class="qb" onclick="hiChain()">🔴 Chain</button>
+      </div>
+    </div>
+    <div id="gc"><svg id="gsvg"></svg><div id="ntt"></div></div>
+    <div class="gleg">
+      <div class="gli"><div class="gld" style="background:#ff3c5a"></div>Mule Chain</div>
+      <div class="gli"><div class="gld" style="background:#c864ff"></div>Shared Device</div>
+      <div class="gli"><div class="gld" style="background:#ffb700"></div>High Velocity</div>
+      <div class="gli"><div class="gld" style="background:#00d4ff"></div>Cross Channel</div>
+      <div class="gli"><div class="gld" style="background:#ff6a00"></div>Fan-In/Collector</div>
+      <div class="gli"><div class="gld" style="background:#cc44ff"></div>Circular Loop</div>
+      <div class="gli"><div class="gld" style="background:#00ff9d"></div>IP Node</div>
+      <div class="gli"><div class="gld" style="background:#7eb8ff"></div>Device</div>
+      <div class="gli" style="margin-left:auto;font-size:9px;color:var(--text3)">Drag · Hover for details · Scroll to zoom</div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><div class="pt">🔴 High-Risk Nodes</div></div>
+      <div id="nodelist" style="max-height:200px;overflow-y:auto"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="pt">📐 Graph Metrics</div></div>
+      <div class="pb">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:var(--bg3);border-radius:6px;padding:10px;text-align:center">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:800;color:var(--accent)">31</div>
+            <div style="font-size:9px;color:var(--text3)">NODES</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:6px;padding:10px;text-align:center">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:800;color:var(--accent)">43</div>
+            <div style="font-size:9px;color:var(--text3)">EDGES</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:6px;padding:10px;text-align:center">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:800;color:var(--danger)">6</div>
+            <div style="font-size:9px;color:var(--text3)">CLUSTERS</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:6px;padding:10px;text-align:center">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:800;color:var(--orange)">1</div>
+            <div style="font-size:9px;color:var(--text3)">LOOPS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ TRANSACTIONS TAB -->
+<div class="tab" id="tab-transactions">
+  <div class="panel">
+    <div class="ph">
+      <div class="pt">📋 Transaction Log — 229 Records · 22 Columns</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select id="flt1" onchange="filterTxn()"
+          style="background:var(--bg3);border:1px solid var(--border2);color:var(--text3);
+          border-radius:4px;padding:3px 7px;font-size:10px;outline:none">
+          <option value="">All Txns</option>
+          <option value="1">Fraud Only</option>
+          <option value="0">Normal Only</option>
+        </select>
+        <select id="flt2" onchange="filterTxn()"
+          style="background:var(--bg3);border:1px solid var(--border2);color:var(--text3);
+          border-radius:4px;padding:3px 7px;font-size:10px;outline:none">
+          <option value="">All Patterns</option>
+          <option value="Mule Chain">Mule Chain</option>
+          <option value="Shared Device">Shared Device</option>
+          <option value="High Velocity">High Velocity</option>
+          <option value="Cross Channel">Cross Channel</option>
+          <option value="Mule Collection">Mule Collection</option>
+          <option value="Circular Loop">Circular Loop</option>
+        </select>
+      </div>
+    </div>
+    <div class="tw">
+      <table class="dt">
+        <thead><tr>
+          <th>TXN ID</th><th>TIMESTAMP</th><th>NAME</th><th>ACCOUNT</th>
+          <th>AMOUNT</th><th>DEVICE</th><th>IP ADDRESS</th>
+          <th>RECV PIN</th><th>VEL/6H</th><th>CHURN</th>
+          <th>IP DENS</th><th>AGE(d)</th><th>FRAUD TYPE</th><th>RISK</th>
+        </tr></thead>
+        <tbody id="txn-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SIGNALS TAB -->
+<div class="tab" id="tab-signals">
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><div class="pt">⚡ velocity_l6h — Burst Escalation</div></div>
+      <div class="sigrow"><div class="sigicon">🚀</div>
+        <div class="siginfo"><div class="signame">Senthil Kumar (HVEL0001→HVEL0008)</div>
+          <div class="sigdesc">Escalates: 2→3→4→5→6→7→8→9 over 4 minutes</div></div>
+        <div class="sigval" style="color:var(--danger)">9</div></div>
+      <div class="sigrow"><div class="sigicon">⚡</div>
+        <div class="siginfo"><div class="signame">Saranya Venkat (CROSS001→CROSS002)</div>
+          <div class="sigdesc">Jumps 1→2 across Chennai + Delhi</div></div>
+        <div class="sigval" style="color:var(--warn)">2</div></div>
+      <div class="sigrow"><div class="sigicon">⚡</div>
+        <div class="siginfo"><div class="signame">Balaji Natarajan (SHDEV0005)</div>
+          <div class="sigdesc">velocity_l6h=2 · Samsung S23 · 8-min window</div></div>
+        <div class="sigval" style="color:var(--warn)">2</div></div>
+      <div style="background:var(--bg3);margin:8px 12px 12px;border-radius:6px;padding:10px">
+        <div style="font-size:9px;color:var(--text3);margin-bottom:5px;font-family:'Share Tech Mono',monospace">THRESHOLD RULES:</div>
+        <div style="font-size:10px;color:var(--accent2)">vel≥1: Normal &nbsp;|&nbsp; vel≥3: Monitor &nbsp;|&nbsp; vel≥6: Block &nbsp;|&nbsp; vel≥9: Critical 🚨</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="pt">📉 churn_rate — Mule Behavior</div></div>
+      <div class="sigrow"><div class="sigicon">📉</div>
+        <div class="siginfo"><div class="signame">Arun Menon (SHDEV0003)</div>
+          <div class="sigdesc">Highest in dataset — funds relay immediately</div></div>
+        <div class="sigval" style="color:var(--danger)">0.983</div></div>
+      <div class="sigrow"><div class="sigicon">📉</div>
+        <div class="siginfo"><div class="signame">Priya Nair (MULE0002)</div>
+          <div class="sigdesc">Mule Chain hop #2 — chain relay</div></div>
+        <div class="sigval" style="color:var(--danger)">0.982</div></div>
+      <div class="sigrow"><div class="sigicon">📉</div>
+        <div class="siginfo"><div class="signame">Arjun Sharma (MULE0001)</div>
+          <div class="sigdesc">Chain initiator — high churn signature</div></div>
+        <div class="sigval" style="color:var(--danger)">0.975</div></div>
+      <div class="sigrow"><div class="sigicon">📉</div>
+        <div class="siginfo"><div class="signame">FAN accounts (avg)</div>
+          <div class="sigdesc">8 mule collection accounts · rapid exit</div></div>
+        <div class="sigval" style="color:var(--danger)">0.940</div></div>
+      <div style="background:var(--bg3);margin:8px 12px 12px;border-radius:6px;padding:10px">
+        <div style="font-size:9px;color:var(--text3);margin-bottom:5px;font-family:'Share Tech Mono',monospace">THRESHOLD RULES:</div>
+        <div style="font-size:10px;color:var(--accent2)">&lt;0.5: Normal &nbsp;|&nbsp; 0.5–0.85: Watch &nbsp;|&nbsp; &gt;0.85: Flag &nbsp;|&nbsp; &gt;0.95: Critical 🚨</div>
+      </div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><div class="pt">🌐 ip_account_density — Cluster Density</div></div>
+      <div class="sigrow"><div class="sigicon">🌐</div>
+        <div class="siginfo"><div class="signame">103.50.181.18</div>
+          <div class="sigdesc">HVEL (8 txns) + 8 Mule Collection accounts combined</div></div>
+        <div class="sigval" style="color:var(--danger)">19</div></div>
+      <div class="sigrow"><div class="sigicon">🌐</div>
+        <div class="siginfo"><div class="signame">103.221.93.148</div>
+          <div class="sigdesc">Samsung S23 cluster · 5 shared-device accounts</div></div>
+        <div class="sigval" style="color:var(--warn)">14</div></div>
+      <div class="sigrow"><div class="sigicon">🌐</div>
+        <div class="siginfo"><div class="signame">103.161.159.227</div>
+          <div class="sigdesc">Mule Chain IP · Arjun, Priya, Karthik</div></div>
+        <div class="sigval" style="color:var(--warn)">11</div></div>
+      <div class="sigrow"><div class="sigicon">🌐</div>
+        <div class="siginfo"><div class="signame">192.168.1.1</div>
+          <div class="sigdesc">Private/VPN IP · Circular Loop (Alpha, Beta, Gamma)</div></div>
+        <div class="sigval" style="color:var(--accent)">3</div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="pt">🆕 account_age_days — New Account Alerts</div></div>
+      <div class="sigrow"><div class="sigicon">🆕</div>
+        <div class="siginfo"><div class="signame">MULE_ACC_0 → MULE_ACC_7 (Fan-In)</div>
+          <div class="sigdesc">8 throwaway accounts created just before attack</div></div>
+        <div class="sigval" style="color:var(--danger)">5d</div></div>
+      <div class="sigrow"><div class="sigicon">🆕</div>
+        <div class="siginfo"><div class="signame">ACC_A, ACC_B, ACC_C (Circular Loop)</div>
+          <div class="sigdesc">Disposable accounts for cyclic laundering</div></div>
+        <div class="sigval" style="color:var(--danger)">5d</div></div>
+      <div class="sigrow"><div class="sigicon">🆕</div>
+        <div class="siginfo"><div class="signame">Balaji Natarajan (SHDEV0005)</div>
+          <div class="sigdesc">Youngest in shared-device cluster</div></div>
+        <div class="sigval" style="color:var(--warn)">45d</div></div>
+      <div class="sigrow"><div class="sigicon">🆕</div>
+        <div class="siginfo"><div class="signame">Dinesh Raj (Normal — monitor)</div>
+          <div class="sigdesc">Normal txn but age 4 days — flag for watch</div></div>
+        <div class="sigval" style="color:var(--accent2)">4d</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ STORIES TAB -->
+<div class="tab" id="tab-stories">
+
+  <!-- STORY 5: Fan-In NEW -->
+  <div class="sp">
+    <div class="stitle">🔥 FRAUD #5 (NEW) — Mule Collection: 8 Accounts Fan-In → COLL_ACC_01</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:10px;font-family:'Share Tech Mono',monospace">
+      2025-07-02 10:00–10:07 · IP:103.50.181.18 · OnePlus 11 · ip_density:19 · account_age:5d · avg_churn:0.940
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px">
+        <div style="background:var(--panel);border:1px solid rgba(255,106,0,.4);border-radius:4px;padding:5px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px"><div style="color:var(--orange)">Mule0</div><div style="color:var(--text3);font-size:9px">₹5K · 5d</div><div style="color:var(--danger);font-size:8px">churn:0.965</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,106,0,.4);border-radius:4px;padding:5px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px"><div style="color:var(--orange)">Mule1</div><div style="color:var(--text3);font-size:9px">₹5K · 5d</div><div style="color:var(--danger);font-size:8px">churn:0.918</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,106,0,.4);border-radius:4px;padding:5px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px"><div style="color:var(--orange)">Mule2</div><div style="color:var(--text3);font-size:9px">₹5K · 5d</div><div style="color:var(--danger);font-size:8px">churn:0.948</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,106,0,.4);border-radius:4px;padding:5px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px"><div style="color:var(--orange)">Mule3</div><div style="color:var(--text3);font-size:9px">₹5K · 5d</div><div style="color:var(--danger);font-size:8px">churn:0.975</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,106,0,.4);border-radius:4px;padding:5px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px"><div style="color:var(--orange)">Mule4</div><div style="color:var(--text3);font-size:9px">₹5K · 5d</div><div style="color:var(--danger);font-size:8px">churn:0.972</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,106,0,.4);border-radius:4px;padding:5px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px"><div style="color:var(--orange)">Mule5</div><div style="color:var(--text3);font-size:9px">₹5K · 5d</div><div style="color:var(--danger);font-size:8px">churn:0.921</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,106,0,.4);border-radius:4px;padding:5px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px"><div style="color:var(--orange)">Mule6</div><div style="color:var(--text3);font-size:9px">₹5K · 5d</div><div style="color:var(--danger);font-size:8px">churn:0.904</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,106,0,.4);border-radius:4px;padding:5px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px"><div style="color:var(--orange)">Mule7</div><div style="color:var(--text3);font-size:9px">₹5K · 5d</div><div style="color:var(--danger);font-size:8px">churn:0.927</div></div>
+      </div>
+      <div style="text-align:center;color:var(--warn);margin-bottom:8px;font-size:13px">↓ &nbsp;↓ &nbsp;↓ &nbsp;↓ &nbsp;↓ &nbsp;↓ &nbsp;↓ &nbsp;↓ &nbsp;&nbsp; 8 UPI transfers · same 7-min window</div>
+      <div style="background:rgba(255,106,0,.12);border:2px solid var(--orange);border-radius:8px;padding:10px;text-align:center">
+        <div style="color:var(--orange);font-size:15px;font-weight:700;font-family:'Rajdhani',sans-serif">🎯 COLL_ACC_01 — COLLECTOR NODE</div>
+        <div style="color:var(--text3);font-size:10px;margin-top:4px;font-family:'Share Tech Mono',monospace">₹40,000 received · IP:103.50.181.18 · Highest degree centrality in graph</div>
+      </div>
+    </div>
+    <div class="sfacts">
+      <div class="fact" style="border-left-color:var(--orange)"><div class="factv" style="color:var(--orange)">8 mules</div><div class="factl">Throwaway accounts</div></div>
+      <div class="fact" style="border-left-color:var(--orange)"><div class="factv" style="color:var(--orange)">5 days</div><div class="factl">Account age (disposable)</div></div>
+      <div class="fact" style="border-left-color:var(--orange)"><div class="factv" style="color:var(--orange)">₹40,000</div><div class="factl">Collected in 7 minutes</div></div>
+    </div>
+  </div>
+
+  <!-- STORY 6: Circular Loop NEW -->
+  <div class="sp" style="border-color:rgba(204,68,255,.4)">
+    <div class="stitle" style="color:var(--purple)">🔥 FRAUD #6 (NEW) — Circular Loop: Alpha → Beta → Gamma → Alpha</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:10px;font-family:'Share Tech Mono',monospace">
+      2025-07-02 15:00–15:10 · IP:192.168.1.1 (VPN) · OnePlus 11 · all accounts age:5d · churn:0.903–0.961
+    </div>
+    <div class="chain">
+      <div class="cn" style="border-color:var(--purple);color:var(--purple)">Alpha (ACC_A)<span class="ct">15:00:00 · ₹10,000</span></div>
+      <div class="ca" style="color:var(--purple)">━━▶</div>
+      <div class="cn" style="border-color:var(--purple);color:var(--purple)">Beta (ACC_B)<span class="ct">15:05:00 · ₹9,900</span></div>
+      <div class="ca" style="color:var(--purple)">━━▶</div>
+      <div class="cn" style="border-color:var(--purple);color:var(--purple)">Gamma (ACC_C)<span class="ct">15:10:00 · ₹9,800</span></div>
+      <div class="ca" style="color:var(--purple)">↩ Loop</div>
+      <div class="cn" style="border-color:var(--purple);color:var(--purple)">↩ Alpha (ACC_A)<span class="ct">Cycle closes</span></div>
+    </div>
+    <div style="background:rgba(204,68,255,.08);border:1px solid rgba(204,68,255,.3);border-radius:6px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--purple);margin-bottom:10px">
+      ⚠ Diminishing amounts: ₹10,000 → ₹9,900 → ₹9,800 (₹100 fee extracted per hop). Cyclic pattern obscures fund origin. Private IP 192.168.1.1 = VPN/Tor suspected.
+    </div>
+    <div class="sfacts">
+      <div class="fact" style="border-left-color:var(--purple)"><div class="factv" style="color:var(--purple)">A→B→C→A</div><div class="factl">Cyclic path</div></div>
+      <div class="fact" style="border-left-color:var(--purple)"><div class="factv" style="color:var(--purple)">10 min</div><div class="factl">Full cycle time</div></div>
+      <div class="fact" style="border-left-color:var(--purple)"><div class="factv" style="color:var(--purple)">₹300</div><div class="factl">Fee extracted per cycle</div></div>
+    </div>
+  </div>
+
+  <!-- STORY 1: Mule Chain -->
+  <div class="sp">
+    <div class="stitle">🔥 FRAUD #1 — Mule Chain: Arjun → Priya → Karthik → ATM</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:'Share Tech Mono',monospace">
+      2025-06-05 14:00–14:01:40 · IP:103.161.159.227 · iPhone 14 · ip_density:11 · churn avg:0.967
+    </div>
+    <div class="chain">
+      <div class="cn">Arjun Sharma<span class="ct">14:00:00 · ₹50,000 · churn:0.975</span></div>
+      <div class="ca">━━▶</div>
+      <div class="cn">Priya Nair<span class="ct">14:00:50 · ₹48,000 · churn:0.982</span></div>
+      <div class="ca">━━▶</div>
+      <div class="cn atm">🏧 Karthik Rajan<span class="ct">14:01:40 · ₹46,000 · ATM exit</span></div>
+    </div>
+    <div class="sfacts">
+      <div class="fact"><div class="factv">1m 40s</div><div class="factl">Chain duration</div></div>
+      <div class="fact"><div class="factv">0.967</div><div class="factl">Avg churn rate</div></div>
+      <div class="fact"><div class="factv">103.161.159.227</div><div class="factl">Shared IP · iPhone 14</div></div>
+    </div>
+  </div>
+
+  <!-- STORY 2: Shared Device -->
+  <div class="sp">
+    <div class="stitle">🔥 FRAUD #2 — Shared Device: Samsung S23 · 5 Accounts · 8 Min</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:'Share Tech Mono',monospace">
+      2025-06-07 10:30–10:38 · IP:103.221.93.148 · ip_density:14 · avg_churn:0.951
+    </div>
+    <div class="chain">
+      <div class="cn" style="border-color:var(--pink);color:var(--pink)">Manoj Patel<span class="ct">10:30 · ₹32K</span></div>
+      <div class="ca" style="color:var(--pink)">▶</div>
+      <div class="cn" style="border-color:var(--pink);color:var(--pink)">Rekha Singh<span class="ct">10:32 · ₹28K</span></div>
+      <div class="ca" style="color:var(--pink)">▶</div>
+      <div class="cn" style="border-color:var(--pink);color:var(--pink)">Arun Menon<span class="ct">10:34 · ₹35K</span></div>
+      <div class="ca" style="color:var(--pink)">▶</div>
+      <div class="cn" style="border-color:var(--pink);color:var(--pink)">Sindhu Rao<span class="ct">10:36 · ₹18K</span></div>
+      <div class="ca" style="color:var(--pink)">▶</div>
+      <div class="cn" style="border-color:var(--pink);color:var(--pink)">Balaji N.<span class="ct">10:38 · ₹22K</span></div>
+    </div>
+    <div class="sfacts">
+      <div class="fact" style="border-left-color:var(--pink)"><div class="factv" style="color:var(--pink)">5 accts</div><div class="factl">1 Samsung S23</div></div>
+      <div class="fact" style="border-left-color:var(--pink)"><div class="factv" style="color:var(--pink)">8 min</div><div class="factl">Total window</div></div>
+      <div class="fact" style="border-left-color:var(--pink)"><div class="factv" style="color:var(--pink)">₹1.35L</div><div class="factl">Total outflow</div></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- STORY 3: High Velocity -->
+    <div class="sp" style="margin-bottom:0">
+      <div class="stitle">🔥 FRAUD #3 — High Velocity: 8 IMPS in 4 min</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:'Share Tech Mono',monospace">Senthil Kumar · velocity_l6h: 2→9 · all &lt;₹10K (structuring)</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-family:'Share Tech Mono',monospace;font-size:9px">
+        <div style="background:var(--panel);border:1px solid rgba(255,183,0,.3);border-radius:4px;padding:4px;text-align:center"><div style="color:var(--warn)">₹9,990</div><div style="color:var(--text3)">vel:2</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,183,0,.3);border-radius:4px;padding:4px;text-align:center"><div style="color:var(--warn)">₹9,890</div><div style="color:var(--text3)">vel:3</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,183,0,.3);border-radius:4px;padding:4px;text-align:center"><div style="color:var(--warn)">₹9,790</div><div style="color:var(--text3)">vel:4</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,183,0,.3);border-radius:4px;padding:4px;text-align:center"><div style="color:var(--warn)">₹9,690</div><div style="color:var(--text3)">vel:5</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,183,0,.3);border-radius:4px;padding:4px;text-align:center"><div style="color:var(--warn)">₹9,590</div><div style="color:var(--text3)">vel:6</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,183,0,.3);border-radius:4px;padding:4px;text-align:center"><div style="color:var(--warn)">₹9,490</div><div style="color:var(--text3)">vel:7</div></div>
+        <div style="background:var(--panel);border:1px solid rgba(255,183,0,.3);border-radius:4px;padding:4px;text-align:center"><div style="color:var(--warn)">₹9,390</div><div style="color:var(--text3)">vel:8</div></div>
+        <div style="background:rgba(255,60,90,.2);border:1px solid var(--danger);border-radius:4px;padding:4px;text-align:center"><div style="color:var(--danger)">₹9,290</div><div style="color:var(--danger)">vel:9🚨</div></div>
+      </div>
+      <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--danger)">→ Total ₹77,120 to 8 receivers. All below ₹10K threshold = evasion.</div>
+    </div>
+    <!-- STORY 4: Cross Channel -->
+    <div class="sp" style="margin-bottom:0">
+      <div class="stitle">🔥 FRAUD #4 — Cross Channel: Saranya Venkat</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:'Share Tech Mono',monospace">Chennai 11:05:00 + Delhi 11:05:45 = 45s apart · Risk:95</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--bg3);border:1px solid var(--danger);border-radius:6px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:9px">
+          <div style="color:var(--danger);margin-bottom:4px;font-size:11px">🏧 CHENNAI · 600001</div>
+          ₹20,000 · 11:05:00<br>IP: 103.21.219.60<br>ATM Terminal<br>churn:0.921 · vel:1
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--danger);border-radius:6px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:9px">
+          <div style="color:var(--danger);margin-bottom:4px;font-size:11px">💻 DELHI · 110001</div>
+          ₹35,000 · 11:05:45<br>IP: 103.172.69.180<br>Desktop-Firefox<br>churn:0.919 · vel:2
+        </div>
+      </div>
+      <div style="margin-top:8px;background:rgba(255,60,90,.1);border:1px solid rgba(255,60,90,.3);border-radius:5px;padding:8px;font-size:9px;color:var(--danger);font-family:'Share Tech Mono',monospace">
+        ⚠ IMPOSSIBLE TRAVEL: Chennai→Delhi in 45s. Card clone + credential theft.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ CHATBOT TAB -->
+<div class="tab" id="tab-chatbot">
+  <div class="panel">
+    <div class="ph">
+      <div class="pt">🤖 IntelliTrace AI v2 — Fraud Expert Assistant</div>
+      <span style="font-size:9px;color:var(--accent2);font-family:'Share Tech Mono',monospace">claude-sonnet · 6 patterns · 22 signals</span>
+    </div>
+    <div class="qbwrap">
+      <div class="qb" onclick="qsend('Explain the Mule Collection fan-in pattern')">Fan-In Pattern</div>
+      <div class="qb" onclick="qsend('How does circular loop money laundering work?')">Circular Loop</div>
+      <div class="qb" onclick="qsend('What does churn_rate tell us about mule accounts?')">Churn Signal</div>
+      <div class="qb" onclick="qsend('Explain velocity_l6h escalation as a fraud signal')">Velocity Signal</div>
+      <div class="qb" onclick="qsend('Why are accounts with age under 30 days suspicious?')">Account Age</div>
+      <div class="qb" onclick="qsend('What is ip_account_density and how does it detect fraud?')">IP Density</div>
+      <div class="qb" onclick="qsend('Which accounts have the highest risk scores?')">Highest Risk</div>
+      <div class="qb" onclick="qsend('Summarize all 6 fraud patterns found in this dataset')">All 6 Patterns</div>
+    </div>
+    <div class="chatwrap">
+      <div class="chatmsgs" id="chatmsgs">
+        <div class="cmsg bot">
+          <div class="cmsender bot">🤖 INTELLITRACE AI v2</div>
+          Welcome! I'm your IntelliTrace v2 fraud analyst. I've analysed your enhanced dataset of
+          <strong style="color:var(--accent)">229 transactions</strong> with
+          <strong style="color:var(--danger)">29 fraud events</strong> across
+          <strong style="color:var(--orange)">6 patterns</strong>.<br><br>
+          🆕 Two new patterns this version:<br>
+          &nbsp;&nbsp;🟠 <strong>Mule Collection</strong> — 8 throwaway accounts (age:5d, churn:0.94) fan into COLL_ACC_01<br>
+          &nbsp;&nbsp;🟣 <strong>Circular Loop</strong> — Alpha→Beta→Gamma→Alpha, ₹100 fee per hop<br><br>
+          New signals: <code style="color:var(--accent2)">churn_rate</code> · <code style="color:var(--accent2)">velocity_l6h</code> · <code style="color:var(--accent2)">ip_account_density</code> · <code style="color:var(--accent2)">account_age_days</code><br><br>
+          What would you like to know?
+        </div>
+      </div>
+      <div class="cinput-area">
+        <input class="cinput" id="chat-in" type="text"
+          placeholder="Ask about fraud patterns, risk signals, specific accounts..."
+          onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="csend" onclick="sendChat()">SEND ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ─── EMBEDDED DATASET (229 rows) ──────────────────────────────────────────────
+const DATA = [{"timestamp":"2025-06-01 11:18:00","txn_id":"5E295FD7","name":"Vijay Kumar","account_number":"SB83197857","account_type":"Salary","mobile_number":"9331191390","pincode":"603202","narration":"Subscription fee","trans_type":"Mobile Banking","amount":24737.2,"ip_address":"103.198.75.253","device":"ATM Terminal","receiver_account":"SB77827638","is_fraud":0,"fraud_type":"Normal","risk_score":17.1,"account_age_days":630.0,"receiver_name":"Priya Sharma","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.137,"ip_account_density":13},{"timestamp":"2025-06-01 20:43:00","txn_id":"DFA6789D","name":"Madhavi Latha","account_number":"SB89089901","account_type":"Savings","mobile_number":"9692749116","pincode":"602001","narration":"Insurance premium","trans_type":"Net Banking","amount":32227.61,"ip_address":"103.12.170.59","device":"Vivo V25","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":9.0,"account_age_days":465.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.126,"ip_account_density":7},{"timestamp":"2025-06-01 23:35:00","txn_id":"8E32B42A","name":"Jaya Devi","account_number":"SB77827638","account_type":"Joint","mobile_number":"9748245888","pincode":"600002","narration":"Rent payment","trans_type":"Net Banking","amount":45690.03,"ip_address":"103.63.42.119","device":"Samsung S23","receiver_account":"SB85329037","is_fraud":0,"fraud_type":"Normal","risk_score":25.8,"account_age_days":156.0,"receiver_name":"Priya Sharma","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.406,"ip_account_density":10},{"timestamp":"2025-06-02 06:37:00","txn_id":"1960AEF0","name":"Manoj Patel","account_number":"SB89254563","account_type":"NRI","mobile_number":"9461415646","pincode":"600028","narration":"Subscription fee","trans_type":"ATM Withdrawal","amount":855.95,"ip_address":"103.221.93.148","device":"OnePlus 11","receiver_account":"SB13356886","is_fraud":0,"fraud_type":"Normal","risk_score":27.6,"account_age_days":547.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.496,"ip_account_density":14},{"timestamp":"2025-06-02 16:05:00","txn_id":"BA97D1C5","name":"Senthil Kumar","account_number":"SB85329037","account_type":"NRI","mobile_number":"9146654552","pincode":"600028","narration":"Medical expense","trans_type":"NEFT","amount":22955.47,"ip_address":"103.21.219.60","device":"Laptop-Chrome","receiver_account":"SB21668732","is_fraud":0,"fraud_type":"Normal","risk_score":23.0,"account_age_days":463.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.32,"ip_account_density":6},{"timestamp":"2025-06-02 17:36:00","txn_id":"7BC4C503","name":"Anitha Reddy","account_number":"SB23756669","account_type":"Savings","mobile_number":"9266944844","pincode":"600028","narration":"Monthly salary credit","trans_type":"NEFT","amount":16027.78,"ip_address":"103.198.75.253","device":"Desktop-Firefox","receiver_account":"SB97226012","is_fraud":0,"fraud_type":"Normal","risk_score":10.1,"account_age_days":906.0,"receiver_name":"Arun Singh","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.205,"ip_account_density":13},{"timestamp":"2025-06-02 17:51:00","txn_id":"6E052FA2","name":"Vinoth Kumar","account_number":"SB70291817","account_type":"Salary","mobile_number":"9184611066","pincode":"600096","narration":"Insurance premium","trans_type":"Online Transfer","amount":10943.65,"ip_address":"103.84.216.197","device":"Laptop-Chrome","receiver_account":"SB28728463","is_fraud":0,"fraud_type":"Normal","risk_score":21.4,"account_age_days":290.0,"receiver_name":"Priya Sharma","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.38,"ip_account_density":7},{"timestamp":"2025-06-02 18:44:00","txn_id":"11F85FD7","name":"Vijay Kumar","account_number":"SB83197857","account_type":"Salary","mobile_number":"9331191390","pincode":"600028","narration":"Amazon purchase","trans_type":"NEFT","amount":47552.48,"ip_address":"103.240.175.166","device":"Samsung S23","receiver_account":"SB36687537","is_fraud":0,"fraud_type":"Normal","risk_score":14.2,"account_age_days":630.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.363,"ip_account_density":9},{"timestamp":"2025-06-02 22:53:00","txn_id":"26942213","name":"Deepa Krishnan","account_number":"SB39958838","account_type":"Joint","mobile_number":"9465341213","pincode":"601302","narration":"Electricity bill","trans_type":"Mobile Banking","amount":48125.5,"ip_address":"103.95.91.54","device":"iPhone 14","receiver_account":"SB95822412","is_fraud":0,"fraud_type":"Normal","risk_score":12.5,"account_age_days":697.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.418,"ip_account_density":10},{"timestamp":"2025-06-03 00:06:00","txn_id":"8D19DED4","name":"Vijay Kumar","account_number":"SB83197857","account_type":"NRI","mobile_number":"9331191390","pincode":"600096","narration":"Loan EMI","trans_type":"Mobile Banking","amount":39428.19,"ip_address":"103.44.137.187","device":"iPhone 13","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":7.9,"account_age_days":630.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":2.0,"churn_rate":0.138,"ip_account_density":8},{"timestamp":"2025-06-03 04:18:00","txn_id":"20435A49","name":"Lakshmi Iyer","account_number":"SB21668732","account_type":"Savings","mobile_number":"9919795579","pincode":"600091","narration":"Amazon purchase","trans_type":"Mobile Banking","amount":13193.98,"ip_address":"103.98.70.254","device":"OnePlus 11","receiver_account":"SB28728463","is_fraud":0,"fraud_type":"Normal","risk_score":25.7,"account_age_days":499.0,"receiver_name":"Priya Sharma","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.402,"ip_account_density":11},{"timestamp":"2025-06-03 06:00:00","txn_id":"3B1CF901","name":"Vijay Kumar","account_number":"SB83197857","account_type":"Salary","mobile_number":"9331191390","pincode":"600014","narration":"Insurance premium","trans_type":"ATM Withdrawal","amount":37190.93,"ip_address":"103.143.57.176","device":"Desktop-Firefox","receiver_account":"SB77827638","is_fraud":0,"fraud_type":"Normal","risk_score":5.2,"account_age_days":630.0,"receiver_name":"Priya Sharma","receiver_pincode":"560001","velocity_l6h":2.0,"churn_rate":0.383,"ip_account_density":13},{"timestamp":"2025-06-03 07:02:00","txn_id":"B19E5ECF","name":"Rahul Gupta","account_number":"SB42868828","account_type":"Salary","mobile_number":"9553778756","pincode":"601302","narration":"Grocery payment","trans_type":"Online Transfer","amount":12122.6,"ip_address":"103.143.57.176","device":"Redmi Note 12","receiver_account":"SB14265799","is_fraud":0,"fraud_type":"Normal","risk_score":16.3,"account_age_days":927.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.303,"ip_account_density":13},{"timestamp":"2025-06-03 13:16:00","txn_id":"DC5BB251","name":"Deepa Krishnan","account_number":"SB39958838","account_type":"Joint","mobile_number":"9465341213","pincode":"600002","narration":"Grocery payment","trans_type":"NEFT","amount":24841.45,"ip_address":"103.84.216.197","device":"iPhone 14","receiver_account":"SB42868828","is_fraud":0,"fraud_type":"Normal","risk_score":8.7,"account_age_days":697.0,"receiver_name":"Karan Malhotra","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.177,"ip_account_density":7},{"timestamp":"2025-06-03 14:08:00","txn_id":"427E78DC","name":"Vijay Kumar","account_number":"SB83197857","account_type":"Joint","mobile_number":"9331191390","pincode":"602001","narration":"Grocery payment","trans_type":"Mobile Banking","amount":3646.12,"ip_address":"103.63.42.119","device":"Laptop-Chrome","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":19.8,"account_age_days":630.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":1.0,"churn_rate":0.447,"ip_account_density":10},{"timestamp":"2025-06-03 16:43:00","txn_id":"72708236","name":"Madhavi Latha","account_number":"SB89089901","account_type":"Savings","mobile_number":"9692749116","pincode":"600001","narration":"Medical expense","trans_type":"Mobile Banking","amount":17295.48,"ip_address":"103.12.170.59","device":"OnePlus 11","receiver_account":"SB28728463","is_fraud":0,"fraud_type":"Normal","risk_score":9.8,"account_age_days":465.0,"receiver_name":"Priya Sharma","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.25,"ip_account_density":7},{"timestamp":"2025-06-03 19:04:00","txn_id":"7FB387A6","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Joint","mobile_number":"9506448196","pincode":"600091","narration":"Petrol expense","trans_type":"Net Banking","amount":37619.95,"ip_address":"103.21.219.60","device":"iPhone 14","receiver_account":"SB42868828","is_fraud":0,"fraud_type":"Normal","risk_score":26.2,"account_age_days":546.0,"receiver_name":"Karan Malhotra","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.185,"ip_account_density":6},{"timestamp":"2025-06-04 04:21:00","txn_id":"40A9EBE2","name":"Manoj Patel","account_number":"SB89254563","account_type":"Savings","mobile_number":"9461415646","pincode":"602001","narration":"Medical expense","trans_type":"UPI Payment","amount":12973.79,"ip_address":"103.199.15.59","device":"Redmi Note 12","receiver_account":"SB89254563","is_fraud":0,"fraud_type":"Normal","risk_score":7.0,"account_age_days":547.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.258,"ip_account_density":12},{"timestamp":"2025-06-04 06:22:00","txn_id":"986F63EF","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Current","mobile_number":"9506448196","pincode":"600002","narration":"Subscription fee","trans_type":"Mobile Banking","amount":37955.61,"ip_address":"103.198.75.253","device":"iPhone 14","receiver_account":"SB66629388","is_fraud":0,"fraud_type":"Normal","risk_score":18.7,"account_age_days":546.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.367,"ip_account_density":13},{"timestamp":"2025-06-04 12:34:00","txn_id":"2134626F","name":"Meena Pillai","account_number":"SB46913810","account_type":"Current","mobile_number":"9849621470","pincode":"602001","narration":"Insurance premium","trans_type":"ATM Withdrawal","amount":46696.34,"ip_address":"103.50.181.18","device":"OnePlus 11","receiver_account":"SB66629388","is_fraud":0,"fraud_type":"Normal","risk_score":12.1,"account_age_days":133.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.24,"ip_account_density":19},{"timestamp":"2025-06-04 13:30:00","txn_id":"6DAB82FF","name":"Rahul Gupta","account_number":"SB42868828","account_type":"Salary","mobile_number":"9553778756","pincode":"600091","narration":"Subscription fee","trans_type":"Mobile Banking","amount":20175.42,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB89089901","is_fraud":0,"fraud_type":"Normal","risk_score":21.9,"account_age_days":927.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.374,"ip_account_density":19},{"timestamp":"2025-06-04 17:16:00","txn_id":"23C72D9E","name":"Madhavi Latha","account_number":"SB89089901","account_type":"Current","mobile_number":"9692749116","pincode":"602001","narration":"Insurance premium","trans_type":"ATM Withdrawal","amount":31438.61,"ip_address":"103.199.15.59","device":"Tablet-Android","receiver_account":"SB13356886","is_fraud":0,"fraud_type":"Normal","risk_score":17.6,"account_age_days":465.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.377,"ip_account_density":12},{"timestamp":"2025-06-04 17:25:00","txn_id":"D4DC77FA","name":"Ramesh Verma","account_number":"SB41227216","account_type":"Salary","mobile_number":"9469319644","pincode":"600091","narration":"Rent payment","trans_type":"UPI Payment","amount":39066.33,"ip_address":"103.50.181.18","device":"Tablet-Android","receiver_account":"SB85329037","is_fraud":0,"fraud_type":"Normal","risk_score":7.9,"account_age_days":363.0,"receiver_name":"Priya Sharma","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.295,"ip_account_density":19},{"timestamp":"2025-06-04 17:27:00","txn_id":"B22CD8F7","name":"Sindhu Rao","account_number":"SB13999315","account_type":"NRI","mobile_number":"9507943839","pincode":"600014","narration":"Petrol expense","trans_type":"UPI Payment","amount":16399.97,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB36687537","is_fraud":0,"fraud_type":"Normal","risk_score":12.4,"account_age_days":504.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.317,"ip_account_density":19},{"timestamp":"2025-06-04 20:02:00","txn_id":"54E9F6B8","name":"Arjun Sharma","account_number":"SB95822412","account_type":"NRI","mobile_number":"9914763202","pincode":"600040","narration":"Rent payment","trans_type":"Net Banking","amount":28820.79,"ip_address":"103.199.15.59","device":"iPhone 14","receiver_account":"SB39345092","is_fraud":0,"fraud_type":"Normal","risk_score":27.2,"account_age_days":224.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.325,"ip_account_density":12},{"timestamp":"2025-06-04 20:26:00","txn_id":"7F4D30C0","name":"Nithya Chandran","account_number":"SB13561597","account_type":"NRI","mobile_number":"9966647391","pincode":"603202","narration":"Petrol expense","trans_type":"UPI Payment","amount":46767.96,"ip_address":"103.222.26.98","device":"Laptop-Chrome","receiver_account":"SB23756669","is_fraud":0,"fraud_type":"Normal","risk_score":11.6,"account_age_days":639.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.107,"ip_account_density":6},{"timestamp":"2025-06-05 00:15:00","txn_id":"BEB8AA6F","name":"Suresh Babu","account_number":"SB28728463","account_type":"Joint","mobile_number":"9398362082","pincode":"601302","narration":"Petrol expense","trans_type":"Net Banking","amount":12396.03,"ip_address":"103.98.70.254","device":"ATM Terminal","receiver_account":"SB22575562","is_fraud":0,"fraud_type":"Normal","risk_score":24.8,"account_age_days":164.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.142,"ip_account_density":11},{"timestamp":"2025-06-05 01:17:00","txn_id":"542A95D4","name":"Vinoth Kumar","account_number":"SB70291817","account_type":"Joint","mobile_number":"9184611066","pincode":"600028","narration":"Amazon purchase","trans_type":"IMPS","amount":30711.42,"ip_address":"103.19.156.163","device":"Laptop-Chrome","receiver_account":"SB95822412","is_fraud":0,"fraud_type":"Normal","risk_score":17.4,"account_age_days":290.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.101,"ip_account_density":7},{"timestamp":"2025-06-05 02:51:00","txn_id":"C7DF0FE8","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"Salary","mobile_number":"9203848421","pincode":"600091","narration":"Grocery payment","trans_type":"IMPS","amount":27337.48,"ip_address":"103.95.91.54","device":"Redmi Note 12","receiver_account":"SB97226012","is_fraud":0,"fraud_type":"Normal","risk_score":22.7,"account_age_days":45.0,"receiver_name":"Arun Singh","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.398,"ip_account_density":10},{"timestamp":"2025-06-05 04:41:00","txn_id":"936C8555","name":"Swathi Balan","account_number":"SB10872248","account_type":"NRI","mobile_number":"9990566476","pincode":"600028","narration":"Petrol expense","trans_type":"Mobile Banking","amount":36294.33,"ip_address":"103.221.93.148","device":"Redmi Note 12","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":27.1,"account_age_days":358.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.276,"ip_account_density":14},{"timestamp":"2025-06-05 10:20:00","txn_id":"1DEC5C9C","name":"Sindhu Rao","account_number":"SB13999315","account_type":"Joint","mobile_number":"9507943839","pincode":"600091","narration":"Insurance premium","trans_type":"UPI Payment","amount":47702.83,"ip_address":"103.98.70.254","device":"Samsung S23","receiver_account":"SB13356886","is_fraud":0,"fraud_type":"Normal","risk_score":25.8,"account_age_days":504.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.254,"ip_account_density":11},{"timestamp":"2025-06-05 13:03:00","txn_id":"CD231B03","name":"Jaya Devi","account_number":"SB77827638","account_type":"NRI","mobile_number":"9748245888","pincode":"600001","narration":"Grocery payment","trans_type":"Net Banking","amount":42510.44,"ip_address":"103.21.219.60","device":"Desktop-Firefox","receiver_account":"SB39345092","is_fraud":0,"fraud_type":"Normal","risk_score":17.0,"account_age_days":156.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.305,"ip_account_density":6},{"timestamp":"2025-06-05 14:00:00","txn_id":"MULE0001","name":"Arjun Sharma","account_number":"SB95822412","account_type":"Savings","mobile_number":"9914763202","pincode":"600001","narration":"Transfer to wallet","trans_type":"Online Transfer","amount":50000.0,"ip_address":"103.161.159.227","device":"iPhone 14","receiver_account":"SB24942603","is_fraud":1,"fraud_type":"Mule Chain","risk_score":85.0,"account_age_days":224.0,"receiver_name":"Priya Sharma","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.975,"ip_account_density":11},{"timestamp":"2025-06-05 14:00:50","txn_id":"MULE0002","name":"Priya Nair","account_number":"SB24942603","account_type":"Savings","mobile_number":"9965241839","pincode":"600001","narration":"Quick fund move","trans_type":"Online Transfer","amount":48000.0,"ip_address":"103.161.159.227","device":"iPhone 14","receiver_account":"SB13356886","is_fraud":1,"fraud_type":"Mule Chain","risk_score":88.0,"account_age_days":304.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.982,"ip_account_density":11},{"timestamp":"2025-06-05 14:01:40","txn_id":"MULE0003","name":"Karthik Rajan","account_number":"SB13356886","account_type":"Savings","mobile_number":"9271432881","pincode":"600001","narration":"Urgent cash out","trans_type":"ATM Withdrawal","amount":46000.0,"ip_address":"103.161.159.227","device":"iPhone 14","receiver_account":"SB46913810","is_fraud":1,"fraud_type":"Mule Chain","risk_score":91.0,"account_age_days":896.0,"receiver_name":"Arun Singh","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.943,"ip_account_density":11},{"timestamp":"2025-06-05 14:53:00","txn_id":"90090FCE","name":"Swathi Balan","account_number":"SB10872248","account_type":"Salary","mobile_number":"9990566476","pincode":"600014","narration":"Electricity bill","trans_type":"Online Transfer","amount":14700.53,"ip_address":"103.98.70.254","device":"Redmi Note 12","receiver_account":"SB66306997","is_fraud":0,"fraud_type":"Normal","risk_score":22.6,"account_age_days":358.0,"receiver_name":"Arun Singh","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.462,"ip_account_density":11},{"timestamp":"2025-06-05 22:49:00","txn_id":"21DE1083","name":"Harish Naidu","account_number":"SB66306997","account_type":"Joint","mobile_number":"9234031070","pincode":"600028","narration":"Electricity bill","trans_type":"Net Banking","amount":47919.32,"ip_address":"103.237.164.177","device":"ATM Terminal","receiver_account":"SB24942603","is_fraud":0,"fraud_type":"Normal","risk_score":18.9,"account_age_days":244.0,"receiver_name":"Priya Sharma","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.202,"ip_account_density":8},{"timestamp":"2025-06-06 06:54:00","txn_id":"CE57B9C3","name":"Dinesh Raj","account_number":"SB97226012","account_type":"NRI","mobile_number":"9593303705","pincode":"600028","narration":"Medical expense","trans_type":"NEFT","amount":44460.51,"ip_address":"103.44.137.187","device":"Laptop-Chrome","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":16.3,"account_age_days":4.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.181,"ip_account_density":8},{"timestamp":"2025-06-06 13:29:00","txn_id":"DC8FC13C","name":"Swathi Balan","account_number":"SB10872248","account_type":"Current","mobile_number":"9990566476","pincode":"601302","narration":"Petrol expense","trans_type":"IMPS","amount":29974.89,"ip_address":"103.63.42.119","device":"iPhone 13","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":23.0,"account_age_days":358.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.41,"ip_account_density":10},{"timestamp":"2025-06-06 16:33:00","txn_id":"DDBBE270","name":"Vinoth Kumar","account_number":"SB70291817","account_type":"Current","mobile_number":"9184611066","pincode":"600040","narration":"Electricity bill","trans_type":"ATM Withdrawal","amount":16471.71,"ip_address":"103.72.117.163","device":"Laptop-Chrome","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":27.4,"account_age_days":290.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":1.0,"churn_rate":0.133,"ip_account_density":9},{"timestamp":"2025-06-06 19:12:00","txn_id":"499E52F4","name":"Jaya Devi","account_number":"SB77827638","account_type":"Joint","mobile_number":"9748245888","pincode":"600096","narration":"Electricity bill","trans_type":"IMPS","amount":28670.71,"ip_address":"103.19.156.163","device":"Tablet-Android","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":5.0,"account_age_days":156.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.366,"ip_account_density":7},{"timestamp":"2025-06-06 20:42:00","txn_id":"E26AF640","name":"Rahul Gupta","account_number":"SB42868828","account_type":"Joint","mobile_number":"9553778756","pincode":"602001","narration":"Electricity bill","trans_type":"UPI Payment","amount":26619.85,"ip_address":"103.199.15.59","device":"Desktop-Firefox","receiver_account":"SB28728463","is_fraud":0,"fraud_type":"Normal","risk_score":28.2,"account_age_days":927.0,"receiver_name":"Priya Sharma","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.346,"ip_account_density":12},{"timestamp":"2025-06-07 02:16:00","txn_id":"E7A23C1D","name":"Prakash Doss","account_number":"SB47338124","account_type":"Savings","mobile_number":"9414797776","pincode":"600002","narration":"Petrol expense","trans_type":"ATM Withdrawal","amount":13981.24,"ip_address":"103.199.15.59","device":"OnePlus 11","receiver_account":"SB97226012","is_fraud":0,"fraud_type":"Normal","risk_score":13.6,"account_age_days":340.0,"receiver_name":"Arun Singh","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.392,"ip_account_density":12},{"timestamp":"2025-06-07 05:48:00","txn_id":"2331169F","name":"Suresh Babu","account_number":"SB28728463","account_type":"Salary","mobile_number":"9398362082","pincode":"600040","narration":"Loan EMI","trans_type":"Online Transfer","amount":882.63,"ip_address":"103.44.137.187","device":"Redmi Note 12","receiver_account":"SB42868828","is_fraud":0,"fraud_type":"Normal","risk_score":14.5,"account_age_days":164.0,"receiver_name":"Karan Malhotra","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.206,"ip_account_density":8},{"timestamp":"2025-06-07 08:27:00","txn_id":"1E0E12F0","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"Current","mobile_number":"9203848421","pincode":"600040","narration":"Amazon purchase","trans_type":"ATM Withdrawal","amount":43787.05,"ip_address":"103.50.181.18","device":"ATM Terminal","receiver_account":"SB39587039","is_fraud":0,"fraud_type":"Normal","risk_score":26.5,"account_age_days":45.0,"receiver_name":"Arun Singh","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.369,"ip_account_density":19},{"timestamp":"2025-06-07 09:06:00","txn_id":"3540915B","name":"Anitha Reddy","account_number":"SB23756669","account_type":"Savings","mobile_number":"9266944844","pincode":"600040","narration":"Medical expense","trans_type":"Net Banking","amount":30961.18,"ip_address":"103.72.117.163","device":"Redmi Note 12","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":13.2,"account_age_days":906.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.167,"ip_account_density":9},{"timestamp":"2025-06-07 09:58:00","txn_id":"C35B372D","name":"Uma Shankar","account_number":"SB36687537","account_type":"Salary","mobile_number":"9883543540","pincode":"600040","narration":"Medical expense","trans_type":"ATM Withdrawal","amount":29954.54,"ip_address":"103.50.181.18","device":"Vivo V25","receiver_account":"SB77827638","is_fraud":0,"fraud_type":"Normal","risk_score":14.4,"account_age_days":874.0,"receiver_name":"Priya Sharma","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.235,"ip_account_density":19},{"timestamp":"2025-06-07 10:30:00","txn_id":"SHDEV0001","name":"Manoj Patel","account_number":"SB89254563","account_type":"NRI","mobile_number":"9461415646","pincode":"600040","narration":"Rapid transfer","trans_type":"Mobile Banking","amount":13219.02,"ip_address":"103.221.93.148","device":"Samsung S23","receiver_account":"SB39587039","is_fraud":1,"fraud_type":"Shared Device","risk_score":78.0,"account_age_days":547.0,"receiver_name":"Arun Singh","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.913,"ip_account_density":14},{"timestamp":"2025-06-07 10:32:00","txn_id":"SHDEV0002","name":"Rekha Singh","account_number":"SB66629388","account_type":"Salary","mobile_number":"9209747451","pincode":"600040","narration":"Rapid transfer","trans_type":"Mobile Banking","amount":23630.47,"ip_address":"103.221.93.148","device":"Samsung S23","receiver_account":"SB47338124","is_fraud":1,"fraud_type":"Shared Device","risk_score":80.0,"account_age_days":699.0,"receiver_name":"Anjali Gupta","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.929,"ip_account_density":14},{"timestamp":"2025-06-07 10:34:00","txn_id":"SHDEV0003","name":"Arun Menon","account_number":"SB14265799","account_type":"NRI","mobile_number":"9199585092","pincode":"600040","narration":"Rapid transfer","trans_type":"Mobile Banking","amount":24817.37,"ip_address":"103.221.93.148","device":"Samsung S23","receiver_account":"SB97226012","is_fraud":1,"fraud_type":"Shared Device","risk_score":82.0,"account_age_days":843.0,"receiver_name":"Arun Singh","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.983,"ip_account_density":14},{"timestamp":"2025-06-07 10:36:00","txn_id":"SHDEV0004","name":"Sindhu Rao","account_number":"SB13999315","account_type":"NRI","mobile_number":"9507943839","pincode":"600040","narration":"Rapid transfer","trans_type":"Mobile Banking","amount":24040.62,"ip_address":"103.221.93.148","device":"Samsung S23","receiver_account":"SB83140807","is_fraud":1,"fraud_type":"Shared Device","risk_score":84.0,"account_age_days":504.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.954,"ip_account_density":14},{"timestamp":"2025-06-07 10:38:00","txn_id":"SHDEV0005","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"Savings","mobile_number":"9203848421","pincode":"600040","narration":"Rapid transfer","trans_type":"Mobile Banking","amount":19920.52,"ip_address":"103.221.93.148","device":"Samsung S23","receiver_account":"SB89089901","is_fraud":1,"fraud_type":"Shared Device","risk_score":86.0,"account_age_days":45.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600002","velocity_l6h":2.0,"churn_rate":0.977,"ip_account_density":14},{"timestamp":"2025-06-08 02:28:00","txn_id":"D844E97E","name":"Priya Nair","account_number":"SB24942603","account_type":"Joint","mobile_number":"9965241839","pincode":"601302","narration":"Amazon purchase","trans_type":"ATM Withdrawal","amount":17339.53,"ip_address":"103.198.75.253","device":"Laptop-Chrome","receiver_account":"SB89089901","is_fraud":0,"fraud_type":"Normal","risk_score":23.0,"account_age_days":304.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.185,"ip_account_density":13},{"timestamp":"2025-06-08 06:34:00","txn_id":"6703CA84","name":"Harish Naidu","account_number":"SB66306997","account_type":"NRI","mobile_number":"9234031070","pincode":"600001","narration":"Subscription fee","trans_type":"UPI Payment","amount":24685.98,"ip_address":"103.12.170.59","device":"Laptop-Chrome","receiver_account":"SB47338124","is_fraud":0,"fraud_type":"Normal","risk_score":29.6,"account_age_days":244.0,"receiver_name":"Anjali Gupta","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.351,"ip_account_density":7},{"timestamp":"2025-06-08 09:16:00","txn_id":"B45CEC5E","name":"Vinoth Kumar","account_number":"SB70291817","account_type":"Joint","mobile_number":"9184611066","pincode":"600040","narration":"Loan EMI","trans_type":"Net Banking","amount":6200.9,"ip_address":"103.50.181.18","device":"Redmi Note 12","receiver_account":"SB66306997","is_fraud":0,"fraud_type":"Normal","risk_score":29.2,"account_age_days":290.0,"receiver_name":"Arun Singh","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.464,"ip_account_density":19},{"timestamp":"2025-06-08 10:46:00","txn_id":"BBC0E72D","name":"Nithya Chandran","account_number":"SB13561597","account_type":"Joint","mobile_number":"9966647391","pincode":"600001","narration":"Medical expense","trans_type":"UPI Payment","amount":33979.96,"ip_address":"103.72.117.163","device":"ATM Terminal","receiver_account":"SB13561597","is_fraud":0,"fraud_type":"Normal","risk_score":12.1,"account_age_days":639.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.39,"ip_account_density":9},{"timestamp":"2025-06-08 10:50:00","txn_id":"B88F87D6","name":"Priya Nair","account_number":"SB24942603","account_type":"Salary","mobile_number":"9965241839","pincode":"603202","narration":"Subscription fee","trans_type":"UPI Payment","amount":22238.1,"ip_address":"103.63.42.119","device":"Vivo V25","receiver_account":"SB97226012","is_fraud":0,"fraud_type":"Normal","risk_score":15.1,"account_age_days":304.0,"receiver_name":"Arun Singh","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.497,"ip_account_density":10},{"timestamp":"2025-06-08 14:42:00","txn_id":"0C8DA425","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Savings","mobile_number":"9506448196","pincode":"600040","narration":"Petrol expense","trans_type":"Mobile Banking","amount":31830.57,"ip_address":"103.172.69.180","device":"Samsung S23","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":28.8,"account_age_days":546.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.235,"ip_account_density":5},{"timestamp":"2025-06-08 16:51:00","txn_id":"DC2F130A","name":"Manoj Patel","account_number":"SB89254563","account_type":"NRI","mobile_number":"9461415646","pincode":"601302","narration":"Loan EMI","trans_type":"Online Transfer","amount":22117.23,"ip_address":"103.12.170.59","device":"OnePlus 11","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":19.7,"account_age_days":547.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.355,"ip_account_density":7},{"timestamp":"2025-06-09 03:31:00","txn_id":"284BE0DC","name":"Manoj Patel","account_number":"SB89254563","account_type":"Current","mobile_number":"9461415646","pincode":"600091","narration":"Insurance premium","trans_type":"UPI Payment","amount":14343.1,"ip_address":"103.199.15.59","device":"Vivo V25","receiver_account":"SB77827638","is_fraud":0,"fraud_type":"Normal","risk_score":5.3,"account_age_days":547.0,"receiver_name":"Priya Sharma","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.135,"ip_account_density":12},{"timestamp":"2025-06-09 07:04:00","txn_id":"1F476557","name":"Karthik Rajan","account_number":"SB13356886","account_type":"NRI","mobile_number":"9271432881","pincode":"600002","narration":"Rent payment","trans_type":"NEFT","amount":6434.39,"ip_address":"103.84.216.197","device":"OnePlus 11","receiver_account":"SB90801586","is_fraud":0,"fraud_type":"Normal","risk_score":19.9,"account_age_days":896.0,"receiver_name":"Anjali Gupta","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.389,"ip_account_density":7},{"timestamp":"2025-06-09 12:18:00","txn_id":"CFBCD999","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Salary","mobile_number":"9146654552","pincode":"600001","narration":"Loan EMI","trans_type":"UPI Payment","amount":6661.51,"ip_address":"103.240.175.166","device":"Desktop-Firefox","receiver_account":"SB47338124","is_fraud":0,"fraud_type":"Normal","risk_score":15.0,"account_age_days":463.0,"receiver_name":"Anjali Gupta","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.24,"ip_account_density":9},{"timestamp":"2025-06-09 15:18:00","txn_id":"40B37C9E","name":"Vinoth Kumar","account_number":"SB70291817","account_type":"Current","mobile_number":"9184611066","pincode":"600091","narration":"Electricity bill","trans_type":"UPI Payment","amount":1200.34,"ip_address":"103.143.57.176","device":"Redmi Note 12","receiver_account":"SB83197857","is_fraud":0,"fraud_type":"Normal","risk_score":6.1,"account_age_days":290.0,"receiver_name":"Sneha Nair","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.348,"ip_account_density":13},{"timestamp":"2025-06-09 15:57:00","txn_id":"CEB8DD9C","name":"Ramesh Verma","account_number":"SB41227216","account_type":"Salary","mobile_number":"9469319644","pincode":"600091","narration":"Electricity bill","trans_type":"ATM Withdrawal","amount":5588.82,"ip_address":"103.214.94.42","device":"OnePlus 11","receiver_account":"SB39958838","is_fraud":0,"fraud_type":"Normal","risk_score":20.1,"account_age_days":363.0,"receiver_name":"Vikram Rathore","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.367,"ip_account_density":5},{"timestamp":"2025-06-09 16:00:00","txn_id":"HVEL0001","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Current","mobile_number":"9146654552","pincode":"600096","narration":"Split transfer","trans_type":"IMPS","amount":9990.0,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB36687537","is_fraud":1,"fraud_type":"High Velocity","risk_score":90.0,"account_age_days":463.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":2.0,"churn_rate":0.937,"ip_account_density":19},{"timestamp":"2025-06-09 16:00:35","txn_id":"HVEL0002","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Current","mobile_number":"9146654552","pincode":"600096","narration":"Split transfer","trans_type":"IMPS","amount":9890.0,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB97226012","is_fraud":1,"fraud_type":"High Velocity","risk_score":90.5,"account_age_days":463.0,"receiver_name":"Arun Singh","receiver_pincode":"700001","velocity_l6h":3.0,"churn_rate":0.955,"ip_account_density":19},{"timestamp":"2025-06-09 16:01:10","txn_id":"HVEL0003","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Current","mobile_number":"9146654552","pincode":"600096","narration":"Split transfer","trans_type":"IMPS","amount":9790.0,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB83140807","is_fraud":1,"fraud_type":"High Velocity","risk_score":91.0,"account_age_days":463.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":4.0,"churn_rate":0.926,"ip_account_density":19},{"timestamp":"2025-06-09 16:01:45","txn_id":"HVEL0004","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Current","mobile_number":"9146654552","pincode":"600096","narration":"Split transfer","trans_type":"IMPS","amount":9690.0,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB66306997","is_fraud":1,"fraud_type":"High Velocity","risk_score":91.5,"account_age_days":463.0,"receiver_name":"Arun Singh","receiver_pincode":"560001","velocity_l6h":5.0,"churn_rate":0.967,"ip_account_density":19},{"timestamp":"2025-06-09 16:02:20","txn_id":"HVEL0005","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Current","mobile_number":"9146654552","pincode":"600096","narration":"Split transfer","trans_type":"IMPS","amount":9590.0,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB39587039","is_fraud":1,"fraud_type":"High Velocity","risk_score":92.0,"account_age_days":463.0,"receiver_name":"Arun Singh","receiver_pincode":"400001","velocity_l6h":6.0,"churn_rate":0.953,"ip_account_density":19},{"timestamp":"2025-06-09 16:02:55","txn_id":"HVEL0006","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Current","mobile_number":"9146654552","pincode":"600096","narration":"Split transfer","trans_type":"IMPS","amount":9490.0,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB70291817","is_fraud":1,"fraud_type":"High Velocity","risk_score":92.5,"account_age_days":463.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":7.0,"churn_rate":0.914,"ip_account_density":19},{"timestamp":"2025-06-09 16:03:30","txn_id":"HVEL0007","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Current","mobile_number":"9146654552","pincode":"600096","narration":"Split transfer","trans_type":"IMPS","amount":9390.0,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB89089901","is_fraud":1,"fraud_type":"High Velocity","risk_score":93.0,"account_age_days":463.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600002","velocity_l6h":8.0,"churn_rate":0.979,"ip_account_density":19},{"timestamp":"2025-06-09 16:04:05","txn_id":"HVEL0008","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Current","mobile_number":"9146654552","pincode":"600096","narration":"Split transfer","trans_type":"IMPS","amount":9290.0,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB47338124","is_fraud":1,"fraud_type":"High Velocity","risk_score":93.5,"account_age_days":463.0,"receiver_name":"Anjali Gupta","receiver_pincode":"560001","velocity_l6h":9.0,"churn_rate":0.907,"ip_account_density":19},{"timestamp":"2025-06-09 21:56:00","txn_id":"5C4A9833","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Savings","mobile_number":"9506448196","pincode":"600091","narration":"Insurance premium","trans_type":"IMPS","amount":20212.09,"ip_address":"103.143.57.176","device":"ATM Terminal","receiver_account":"SB83197857","is_fraud":0,"fraud_type":"Normal","risk_score":5.9,"account_age_days":546.0,"receiver_name":"Sneha Nair","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.339,"ip_account_density":13},{"timestamp":"2025-06-10 05:40:00","txn_id":"564E6B9F","name":"Meena Pillai","account_number":"SB46913810","account_type":"Current","mobile_number":"9849621470","pincode":"600040","narration":"Grocery payment","trans_type":"ATM Withdrawal","amount":12373.33,"ip_address":"103.143.57.176","device":"Samsung S23","receiver_account":"SB39958838","is_fraud":0,"fraud_type":"Normal","risk_score":5.1,"account_age_days":133.0,"receiver_name":"Vikram Rathore","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.448,"ip_account_density":13},{"timestamp":"2025-06-10 08:27:00","txn_id":"53ED4166","name":"Lakshmi Iyer","account_number":"SB21668732","account_type":"NRI","mobile_number":"9919795579","pincode":"603202","narration":"Loan EMI","trans_type":"NEFT","amount":22368.41,"ip_address":"103.222.26.98","device":"Tablet-Android","receiver_account":"SB39345092","is_fraud":0,"fraud_type":"Normal","risk_score":24.8,"account_age_days":499.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.143,"ip_account_density":6},{"timestamp":"2025-06-10 11:05:00","txn_id":"CROSS001","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Savings","mobile_number":"9506448196","pincode":"600001","narration":"ATM Withdrawal Chennai","trans_type":"ATM Withdrawal","amount":20000.0,"ip_address":"103.21.219.60","device":"ATM Terminal","receiver_account":"SELF","is_fraud":1,"fraud_type":"Cross Channel","risk_score":95.0,"account_age_days":546.0,"receiver_name":"Sneha Nair","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.921,"ip_account_density":6},{"timestamp":"2025-06-10 11:05:45","txn_id":"CROSS002","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Savings","mobile_number":"9506448196","pincode":"110001","narration":"Online Transfer Delhi","trans_type":"Net Banking","amount":35000.0,"ip_address":"103.172.69.180","device":"Desktop-Firefox","receiver_account":"SB47338124","is_fraud":1,"fraud_type":"Cross Channel","risk_score":95.0,"account_age_days":546.0,"receiver_name":"Anjali Gupta","receiver_pincode":"560001","velocity_l6h":2.0,"churn_rate":0.919,"ip_account_density":5},{"timestamp":"2025-06-10 12:21:00","txn_id":"55DB7E07","name":"Deepa Krishnan","account_number":"SB39958838","account_type":"Joint","mobile_number":"9465341213","pincode":"600028","narration":"Rent payment","trans_type":"ATM Withdrawal","amount":8169.79,"ip_address":"103.95.91.54","device":"Samsung S23","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":24.3,"account_age_days":697.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":1.0,"churn_rate":0.427,"ip_account_density":10},{"timestamp":"2025-06-11 00:40:00","txn_id":"268C9428","name":"Ramesh Verma","account_number":"SB41227216","account_type":"Current","mobile_number":"9469319644","pincode":"600001","narration":"Grocery payment","trans_type":"NEFT","amount":16849.53,"ip_address":"103.98.70.254","device":"Samsung S23","receiver_account":"SB36687537","is_fraud":0,"fraud_type":"Normal","risk_score":24.3,"account_age_days":363.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.37,"ip_account_density":11},{"timestamp":"2025-06-11 03:43:00","txn_id":"45456125","name":"Karthik Rajan","account_number":"SB13356886","account_type":"NRI","mobile_number":"9271432881","pincode":"603202","narration":"Monthly salary credit","trans_type":"Net Banking","amount":33777.94,"ip_address":"103.214.94.42","device":"iPhone 13","receiver_account":"SB24942603","is_fraud":0,"fraud_type":"Normal","risk_score":24.1,"account_age_days":896.0,"receiver_name":"Priya Sharma","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.321,"ip_account_density":5},{"timestamp":"2025-06-11 04:32:00","txn_id":"2C2FC696","name":"Dinesh Raj","account_number":"SB97226012","account_type":"NRI","mobile_number":"9593303705","pincode":"600091","narration":"Grocery payment","trans_type":"NEFT","amount":43157.34,"ip_address":"103.221.93.148","device":"Desktop-Firefox","receiver_account":"SB95822412","is_fraud":0,"fraud_type":"Normal","risk_score":16.5,"account_age_days":4.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.29,"ip_account_density":14},{"timestamp":"2025-06-11 15:36:00","txn_id":"B7C059C2","name":"Rekha Singh","account_number":"SB66629388","account_type":"Joint","mobile_number":"9209747451","pincode":"600014","narration":"Grocery payment","trans_type":"IMPS","amount":48745.4,"ip_address":"103.50.181.18","device":"Tablet-Android","receiver_account":"SB77827638","is_fraud":0,"fraud_type":"Normal","risk_score":17.7,"account_age_days":699.0,"receiver_name":"Priya Sharma","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.15,"ip_account_density":19},{"timestamp":"2025-06-12 01:03:00","txn_id":"6046C097","name":"Madhavi Latha","account_number":"SB89089901","account_type":"Joint","mobile_number":"9692749116","pincode":"600091","narration":"Petrol expense","trans_type":"Online Transfer","amount":35714.35,"ip_address":"103.237.164.177","device":"Samsung S23","receiver_account":"SB21668732","is_fraud":0,"fraud_type":"Normal","risk_score":7.1,"account_age_days":465.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.212,"ip_account_density":8},{"timestamp":"2025-06-12 14:32:00","txn_id":"184BA623","name":"Arjun Sharma","account_number":"SB95822412","account_type":"Current","mobile_number":"9914763202","pincode":"602001","narration":"Grocery payment","trans_type":"Net Banking","amount":31452.36,"ip_address":"103.237.164.177","device":"iPhone 13","receiver_account":"SB28728463","is_fraud":0,"fraud_type":"Normal","risk_score":8.8,"account_age_days":224.0,"receiver_name":"Priya Sharma","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.438,"ip_account_density":8},{"timestamp":"2025-06-12 15:50:00","txn_id":"2555E76B","name":"Swathi Balan","account_number":"SB10872248","account_type":"NRI","mobile_number":"9990566476","pincode":"600028","narration":"Medical expense","trans_type":"Online Transfer","amount":27455.84,"ip_address":"103.198.75.253","device":"Vivo V25","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":8.6,"account_age_days":358.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.459,"ip_account_density":13},{"timestamp":"2025-06-13 00:28:00","txn_id":"1FA30800","name":"Deepa Krishnan","account_number":"SB39958838","account_type":"NRI","mobile_number":"9465341213","pincode":"600014","narration":"Medical expense","trans_type":"Online Transfer","amount":47347.46,"ip_address":"103.72.117.163","device":"ATM Terminal","receiver_account":"SB47338124","is_fraud":0,"fraud_type":"Normal","risk_score":13.7,"account_age_days":697.0,"receiver_name":"Anjali Gupta","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.129,"ip_account_density":9},{"timestamp":"2025-06-13 01:18:00","txn_id":"B2568170","name":"Jaya Devi","account_number":"SB77827638","account_type":"Savings","mobile_number":"9748245888","pincode":"603202","narration":"Petrol expense","trans_type":"NEFT","amount":44840.14,"ip_address":"103.19.156.163","device":"Laptop-Chrome","receiver_account":"SB66306997","is_fraud":0,"fraud_type":"Normal","risk_score":25.1,"account_age_days":156.0,"receiver_name":"Arun Singh","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.236,"ip_account_density":7},{"timestamp":"2025-06-13 04:49:00","txn_id":"7FA81323","name":"Senthil Kumar","account_number":"SB85329037","account_type":"NRI","mobile_number":"9146654552","pincode":"601302","narration":"Rent payment","trans_type":"UPI Payment","amount":22273.69,"ip_address":"103.95.91.54","device":"OnePlus 11","receiver_account":"SB83197857","is_fraud":0,"fraud_type":"Normal","risk_score":13.4,"account_age_days":463.0,"receiver_name":"Sneha Nair","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.213,"ip_account_density":10},{"timestamp":"2025-06-13 06:15:00","txn_id":"C1A865A7","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Savings","mobile_number":"9146654552","pincode":"600001","narration":"Electricity bill","trans_type":"NEFT","amount":26128.39,"ip_address":"103.143.57.176","device":"Samsung S23","receiver_account":"SB83197857","is_fraud":0,"fraud_type":"Normal","risk_score":24.4,"account_age_days":463.0,"receiver_name":"Sneha Nair","receiver_pincode":"700001","velocity_l6h":2.0,"churn_rate":0.386,"ip_account_density":13},{"timestamp":"2025-06-13 06:22:00","txn_id":"9FB6E588","name":"Harish Naidu","account_number":"SB66306997","account_type":"NRI","mobile_number":"9234031070","pincode":"600096","narration":"Petrol expense","trans_type":"UPI Payment","amount":46992.24,"ip_address":"103.12.170.59","device":"Vivo V25","receiver_account":"SB39958838","is_fraud":0,"fraud_type":"Normal","risk_score":19.5,"account_age_days":244.0,"receiver_name":"Vikram Rathore","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.204,"ip_account_density":7},{"timestamp":"2025-06-13 06:35:00","txn_id":"37CD7EE9","name":"Anitha Reddy","account_number":"SB23756669","account_type":"Salary","mobile_number":"9266944844","pincode":"600028","narration":"Insurance premium","trans_type":"Net Banking","amount":14805.7,"ip_address":"103.222.26.98","device":"ATM Terminal","receiver_account":"SB89254563","is_fraud":0,"fraud_type":"Normal","risk_score":17.0,"account_age_days":906.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.262,"ip_account_density":6},{"timestamp":"2025-06-13 14:49:00","txn_id":"52B4CDF1","name":"Prakash Doss","account_number":"SB47338124","account_type":"Current","mobile_number":"9414797776","pincode":"603202","narration":"Loan EMI","trans_type":"ATM Withdrawal","amount":32012.58,"ip_address":"103.199.15.59","device":"Vivo V25","receiver_account":"SB36687537","is_fraud":0,"fraud_type":"Normal","risk_score":23.9,"account_age_days":340.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.49,"ip_account_density":12},{"timestamp":"2025-06-13 16:15:00","txn_id":"D1A453BA","name":"Harish Naidu","account_number":"SB66306997","account_type":"Salary","mobile_number":"9234031070","pincode":"600002","narration":"Monthly salary credit","trans_type":"ATM Withdrawal","amount":21281.36,"ip_address":"103.199.15.59","device":"ATM Terminal","receiver_account":"SB13356886","is_fraud":0,"fraud_type":"Normal","risk_score":7.8,"account_age_days":244.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.198,"ip_account_density":12},{"timestamp":"2025-06-13 17:41:00","txn_id":"3601CC04","name":"Jaya Devi","account_number":"SB77827638","account_type":"Salary","mobile_number":"9748245888","pincode":"601302","narration":"Rent payment","trans_type":"Net Banking","amount":40463.79,"ip_address":"103.19.156.163","device":"Vivo V25","receiver_account":"SB22575562","is_fraud":0,"fraud_type":"Normal","risk_score":6.8,"account_age_days":156.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.166,"ip_account_density":7},{"timestamp":"2025-06-13 19:32:00","txn_id":"148E22FE","name":"Kavitha Srinivasan","account_number":"SB39345092","account_type":"Salary","mobile_number":"9485451171","pincode":"600096","narration":"Amazon purchase","trans_type":"NEFT","amount":12564.68,"ip_address":"103.143.57.176","device":"Redmi Note 12","receiver_account":"SB14265799","is_fraud":0,"fraud_type":"Normal","risk_score":9.8,"account_age_days":654.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.212,"ip_account_density":13},{"timestamp":"2025-06-13 22:14:00","txn_id":"AEA833E4","name":"Karthik Rajan","account_number":"SB13356886","account_type":"Joint","mobile_number":"9271432881","pincode":"600028","narration":"Insurance premium","trans_type":"Mobile Banking","amount":29287.0,"ip_address":"103.98.70.254","device":"Tablet-Android","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":13.6,"account_age_days":896.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":1.0,"churn_rate":0.351,"ip_account_density":11},{"timestamp":"2025-06-13 23:20:00","txn_id":"D04500B1","name":"Karthik Rajan","account_number":"SB13356886","account_type":"Joint","mobile_number":"9271432881","pincode":"600014","narration":"Rent payment","trans_type":"ATM Withdrawal","amount":39432.38,"ip_address":"103.240.175.166","device":"Tablet-Android","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":27.8,"account_age_days":896.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":2.0,"churn_rate":0.163,"ip_account_density":9},{"timestamp":"2025-06-13 23:44:00","txn_id":"5361C819","name":"Ganesh Murugan","account_number":"SB90801586","account_type":"Salary","mobile_number":"9384027113","pincode":"600001","narration":"Medical expense","trans_type":"UPI Payment","amount":900.85,"ip_address":"103.221.93.148","device":"iPhone 13","receiver_account":"SB83140807","is_fraud":0,"fraud_type":"Normal","risk_score":17.4,"account_age_days":580.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.393,"ip_account_density":14},{"timestamp":"2025-06-14 03:37:00","txn_id":"39D3B49E","name":"Nithya Chandran","account_number":"SB13561597","account_type":"Salary","mobile_number":"9966647391","pincode":"602001","narration":"Petrol expense","trans_type":"IMPS","amount":24747.41,"ip_address":"103.84.216.197","device":"Vivo V25","receiver_account":"SB39345092","is_fraud":0,"fraud_type":"Normal","risk_score":25.4,"account_age_days":639.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.102,"ip_account_density":7},{"timestamp":"2025-06-14 08:05:00","txn_id":"7BD90C2D","name":"Ganesh Murugan","account_number":"SB90801586","account_type":"Current","mobile_number":"9384027113","pincode":"600002","narration":"Petrol expense","trans_type":"Net Banking","amount":21100.61,"ip_address":"103.199.15.59","device":"iPhone 13","receiver_account":"SB23756669","is_fraud":0,"fraud_type":"Normal","risk_score":24.4,"account_age_days":580.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.332,"ip_account_density":12},{"timestamp":"2025-06-14 11:15:00","txn_id":"DF263E66","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Savings","mobile_number":"9506448196","pincode":"600028","narration":"Subscription fee","trans_type":"Online Transfer","amount":4739.85,"ip_address":"103.98.70.254","device":"Samsung S23","receiver_account":"SB66306997","is_fraud":0,"fraud_type":"Normal","risk_score":18.3,"account_age_days":546.0,"receiver_name":"Arun Singh","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.421,"ip_account_density":11},{"timestamp":"2025-06-14 13:58:00","txn_id":"2922D0A6","name":"Harish Naidu","account_number":"SB66306997","account_type":"Salary","mobile_number":"9234031070","pincode":"600091","narration":"Monthly salary credit","trans_type":"ATM Withdrawal","amount":43558.2,"ip_address":"103.84.216.197","device":"Desktop-Firefox","receiver_account":"SB13356886","is_fraud":0,"fraud_type":"Normal","risk_score":8.5,"account_age_days":244.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.292,"ip_account_density":7},{"timestamp":"2025-06-14 16:36:00","txn_id":"B3E2014C","name":"Arjun Sharma","account_number":"SB95822412","account_type":"Joint","mobile_number":"9914763202","pincode":"600096","narration":"Rent payment","trans_type":"Online Transfer","amount":29808.84,"ip_address":"103.72.117.163","device":"Samsung S23","receiver_account":"SB97226012","is_fraud":0,"fraud_type":"Normal","risk_score":24.3,"account_age_days":224.0,"receiver_name":"Arun Singh","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.178,"ip_account_density":9},{"timestamp":"2025-06-14 17:12:00","txn_id":"90F54097","name":"Ganesh Murugan","account_number":"SB90801586","account_type":"Current","mobile_number":"9384027113","pincode":"601302","narration":"Petrol expense","trans_type":"NEFT","amount":25188.61,"ip_address":"103.95.91.54","device":"ATM Terminal","receiver_account":"SB95822412","is_fraud":0,"fraud_type":"Normal","risk_score":7.3,"account_age_days":580.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.271,"ip_account_density":10},{"timestamp":"2025-06-14 17:36:00","txn_id":"41BF2A6F","name":"Karthik Rajan","account_number":"SB13356886","account_type":"Joint","mobile_number":"9271432881","pincode":"603202","narration":"Medical expense","trans_type":"Mobile Banking","amount":32187.01,"ip_address":"103.95.91.54","device":"Samsung S23","receiver_account":"SB14265799","is_fraud":0,"fraud_type":"Normal","risk_score":5.5,"account_age_days":896.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.18,"ip_account_density":10},{"timestamp":"2025-06-14 18:03:00","txn_id":"7C09150D","name":"Pooja Agarwal","account_number":"SB83140807","account_type":"Savings","mobile_number":"9675770529","pincode":"603202","narration":"Amazon purchase","trans_type":"IMPS","amount":46009.66,"ip_address":"103.237.164.177","device":"Redmi Note 12","receiver_account":"SB24942603","is_fraud":0,"fraud_type":"Normal","risk_score":29.0,"account_age_days":408.0,"receiver_name":"Priya Sharma","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.127,"ip_account_density":8},{"timestamp":"2025-06-15 01:42:00","txn_id":"65CBF484","name":"Manoj Patel","account_number":"SB89254563","account_type":"Savings","mobile_number":"9461415646","pincode":"600014","narration":"Loan EMI","trans_type":"NEFT","amount":34836.85,"ip_address":"103.95.91.54","device":"Desktop-Firefox","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":24.0,"account_age_days":547.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.115,"ip_account_density":10},{"timestamp":"2025-06-15 09:52:00","txn_id":"20EE1909","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Current","mobile_number":"9506448196","pincode":"602001","narration":"Grocery payment","trans_type":"Mobile Banking","amount":33687.57,"ip_address":"103.237.164.177","device":"Laptop-Chrome","receiver_account":"SB95822412","is_fraud":0,"fraud_type":"Normal","risk_score":14.1,"account_age_days":546.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.374,"ip_account_density":8},{"timestamp":"2025-06-15 11:04:00","txn_id":"E37286E1","name":"Madhavi Latha","account_number":"SB89089901","account_type":"NRI","mobile_number":"9692749116","pincode":"600028","narration":"Insurance premium","trans_type":"Mobile Banking","amount":24528.02,"ip_address":"103.143.57.176","device":"Redmi Note 12","receiver_account":"SB83140807","is_fraud":0,"fraud_type":"Normal","risk_score":28.4,"account_age_days":465.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.289,"ip_account_density":13},{"timestamp":"2025-06-15 11:39:00","txn_id":"9C474F19","name":"Uma Shankar","account_number":"SB36687537","account_type":"Salary","mobile_number":"9883543540","pincode":"600002","narration":"Insurance premium","trans_type":"IMPS","amount":15809.59,"ip_address":"103.44.137.187","device":"Laptop-Chrome","receiver_account":"SB14265799","is_fraud":0,"fraud_type":"Normal","risk_score":22.4,"account_age_days":874.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.344,"ip_account_density":8},{"timestamp":"2025-06-15 12:43:00","txn_id":"D64DF4AD","name":"Rekha Singh","account_number":"SB66629388","account_type":"Savings","mobile_number":"9209747451","pincode":"600096","narration":"Subscription fee","trans_type":"UPI Payment","amount":39939.36,"ip_address":"103.161.159.227","device":"iPhone 13","receiver_account":"SB39345092","is_fraud":0,"fraud_type":"Normal","risk_score":11.6,"account_age_days":699.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.266,"ip_account_density":11},{"timestamp":"2025-06-15 12:55:00","txn_id":"D2515E4E","name":"Ganesh Murugan","account_number":"SB90801586","account_type":"Savings","mobile_number":"9384027113","pincode":"601302","narration":"Grocery payment","trans_type":"IMPS","amount":45566.86,"ip_address":"103.161.159.227","device":"Redmi Note 12","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":26.8,"account_age_days":580.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.358,"ip_account_density":11},{"timestamp":"2025-06-16 00:45:00","txn_id":"6281A103","name":"Prakash Doss","account_number":"SB47338124","account_type":"Savings","mobile_number":"9414797776","pincode":"602001","narration":"Electricity bill","trans_type":"Online Transfer","amount":12763.31,"ip_address":"103.63.42.119","device":"ATM Terminal","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":18.1,"account_age_days":340.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":1.0,"churn_rate":0.497,"ip_account_density":10},{"timestamp":"2025-06-16 01:08:00","txn_id":"116378E1","name":"Ramesh Verma","account_number":"SB41227216","account_type":"NRI","mobile_number":"9469319644","pincode":"603202","narration":"Electricity bill","trans_type":"Net Banking","amount":48330.1,"ip_address":"103.44.137.187","device":"Tablet-Android","receiver_account":"SB10872248","is_fraud":0,"fraud_type":"Normal","risk_score":26.7,"account_age_days":363.0,"receiver_name":"Rahul Verma","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.438,"ip_account_density":8},{"timestamp":"2025-06-16 02:25:00","txn_id":"BC68F9C1","name":"Pooja Agarwal","account_number":"SB83140807","account_type":"Current","mobile_number":"9675770529","pincode":"600091","narration":"Petrol expense","trans_type":"IMPS","amount":5756.1,"ip_address":"103.72.117.163","device":"ATM Terminal","receiver_account":"SB46913810","is_fraud":0,"fraud_type":"Normal","risk_score":11.7,"account_age_days":408.0,"receiver_name":"Arun Singh","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.382,"ip_account_density":9},{"timestamp":"2025-06-16 11:55:00","txn_id":"AC175B5C","name":"Sindhu Rao","account_number":"SB13999315","account_type":"Joint","mobile_number":"9507943839","pincode":"600001","narration":"Insurance premium","trans_type":"IMPS","amount":15966.22,"ip_address":"103.12.170.59","device":"iPhone 13","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":10.3,"account_age_days":504.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":1.0,"churn_rate":0.415,"ip_account_density":7},{"timestamp":"2025-06-16 16:23:00","txn_id":"F9455884","name":"Lakshmi Iyer","account_number":"SB21668732","account_type":"Joint","mobile_number":"9919795579","pincode":"600014","narration":"Rent payment","trans_type":"IMPS","amount":20896.56,"ip_address":"103.21.219.60","device":"Redmi Note 12","receiver_account":"SB39958838","is_fraud":0,"fraud_type":"Normal","risk_score":7.0,"account_age_days":499.0,"receiver_name":"Vikram Rathore","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.287,"ip_account_density":6},{"timestamp":"2025-06-16 21:23:00","txn_id":"7497B9E8","name":"Deepa Krishnan","account_number":"SB39958838","account_type":"Salary","mobile_number":"9465341213","pincode":"600096","narration":"Medical expense","trans_type":"Net Banking","amount":17249.17,"ip_address":"103.199.15.59","device":"iPhone 14","receiver_account":"SB39587039","is_fraud":0,"fraud_type":"Normal","risk_score":20.8,"account_age_days":697.0,"receiver_name":"Arun Singh","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.205,"ip_account_density":12},{"timestamp":"2025-06-16 22:57:00","txn_id":"35B59BC7","name":"Lakshmi Iyer","account_number":"SB21668732","account_type":"Savings","mobile_number":"9919795579","pincode":"600091","narration":"Rent payment","trans_type":"Mobile Banking","amount":12851.72,"ip_address":"103.12.170.59","device":"Laptop-Chrome","receiver_account":"SB66306997","is_fraud":0,"fraud_type":"Normal","risk_score":19.0,"account_age_days":499.0,"receiver_name":"Arun Singh","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.326,"ip_account_density":7},{"timestamp":"2025-06-16 23:02:00","txn_id":"CF51C25A","name":"Arun Menon","account_number":"SB14265799","account_type":"Joint","mobile_number":"9199585092","pincode":"600001","narration":"Subscription fee","trans_type":"IMPS","amount":10135.44,"ip_address":"103.143.57.176","device":"Vivo V25","receiver_account":"SB13356886","is_fraud":0,"fraud_type":"Normal","risk_score":14.7,"account_age_days":843.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.305,"ip_account_density":13},{"timestamp":"2025-06-16 23:48:00","txn_id":"E1B5B32F","name":"Jaya Devi","account_number":"SB77827638","account_type":"Current","mobile_number":"9748245888","pincode":"600028","narration":"Subscription fee","trans_type":"IMPS","amount":20368.66,"ip_address":"103.221.93.148","device":"iPhone 14","receiver_account":"SB24942603","is_fraud":0,"fraud_type":"Normal","risk_score":8.4,"account_age_days":156.0,"receiver_name":"Priya Sharma","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.178,"ip_account_density":14},{"timestamp":"2025-06-17 13:17:00","txn_id":"75ECEE88","name":"Harish Naidu","account_number":"SB66306997","account_type":"Joint","mobile_number":"9234031070","pincode":"600040","narration":"Grocery payment","trans_type":"NEFT","amount":1459.47,"ip_address":"103.143.57.176","device":"iPhone 14","receiver_account":"SB66629388","is_fraud":0,"fraud_type":"Normal","risk_score":10.6,"account_age_days":244.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.365,"ip_account_density":13},{"timestamp":"2025-06-17 14:20:00","txn_id":"8AEC1CF6","name":"Jaya Devi","account_number":"SB77827638","account_type":"Joint","mobile_number":"9748245888","pincode":"602001","narration":"Monthly salary credit","trans_type":"IMPS","amount":3886.83,"ip_address":"103.95.91.54","device":"OnePlus 11","receiver_account":"SB83140807","is_fraud":0,"fraud_type":"Normal","risk_score":7.3,"account_age_days":156.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.463,"ip_account_density":10},{"timestamp":"2025-06-17 14:30:00","txn_id":"2B4036D8","name":"Ganesh Murugan","account_number":"SB90801586","account_type":"Savings","mobile_number":"9384027113","pincode":"600091","narration":"Insurance premium","trans_type":"Net Banking","amount":19804.34,"ip_address":"103.44.137.187","device":"Tablet-Android","receiver_account":"SB83140807","is_fraud":0,"fraud_type":"Normal","risk_score":23.4,"account_age_days":580.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.352,"ip_account_density":8},{"timestamp":"2025-06-17 16:39:00","txn_id":"3813D1E9","name":"Madhavi Latha","account_number":"SB89089901","account_type":"Current","mobile_number":"9692749116","pincode":"601302","narration":"Subscription fee","trans_type":"ATM Withdrawal","amount":11993.33,"ip_address":"103.214.94.42","device":"ATM Terminal","receiver_account":"SB83197857","is_fraud":0,"fraud_type":"Normal","risk_score":21.7,"account_age_days":465.0,"receiver_name":"Sneha Nair","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.388,"ip_account_density":5},{"timestamp":"2025-06-17 20:21:00","txn_id":"5BFA4899","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"Current","mobile_number":"9203848421","pincode":"601302","narration":"Amazon purchase","trans_type":"UPI Payment","amount":46253.37,"ip_address":"103.237.164.177","device":"Vivo V25","receiver_account":"SB39587039","is_fraud":0,"fraud_type":"Normal","risk_score":7.1,"account_age_days":45.0,"receiver_name":"Arun Singh","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.224,"ip_account_density":8},{"timestamp":"2025-06-18 11:57:00","txn_id":"CAA0B158","name":"Madhavi Latha","account_number":"SB89089901","account_type":"Savings","mobile_number":"9692749116","pincode":"600014","narration":"Medical expense","trans_type":"Online Transfer","amount":49272.79,"ip_address":"103.214.94.42","device":"ATM Terminal","receiver_account":"SB21668732","is_fraud":0,"fraud_type":"Normal","risk_score":15.6,"account_age_days":465.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.298,"ip_account_density":5},{"timestamp":"2025-06-18 15:46:00","txn_id":"6E18D6D0","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Current","mobile_number":"9506448196","pincode":"601302","narration":"Electricity bill","trans_type":"IMPS","amount":26939.12,"ip_address":"103.19.156.163","device":"iPhone 13","receiver_account":"SB90801586","is_fraud":0,"fraud_type":"Normal","risk_score":21.6,"account_age_days":546.0,"receiver_name":"Anjali Gupta","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.227,"ip_account_density":7},{"timestamp":"2025-06-18 17:39:00","txn_id":"9D0256C9","name":"Madhavi Latha","account_number":"SB89089901","account_type":"Current","mobile_number":"9692749116","pincode":"600028","narration":"Electricity bill","trans_type":"Net Banking","amount":40633.2,"ip_address":"103.44.137.187","device":"iPhone 14","receiver_account":"SB39958838","is_fraud":0,"fraud_type":"Normal","risk_score":23.4,"account_age_days":465.0,"receiver_name":"Vikram Rathore","receiver_pincode":"700001","velocity_l6h":2.0,"churn_rate":0.297,"ip_account_density":8},{"timestamp":"2025-06-18 21:02:00","txn_id":"1E0382B0","name":"Harish Naidu","account_number":"SB66306997","account_type":"Salary","mobile_number":"9234031070","pincode":"601302","narration":"Medical expense","trans_type":"NEFT","amount":49426.49,"ip_address":"103.198.75.253","device":"ATM Terminal","receiver_account":"SB24942603","is_fraud":0,"fraud_type":"Normal","risk_score":8.2,"account_age_days":244.0,"receiver_name":"Priya Sharma","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.414,"ip_account_density":13},{"timestamp":"2025-06-18 22:51:00","txn_id":"5F34553B","name":"Manoj Patel","account_number":"SB89254563","account_type":"Current","mobile_number":"9461415646","pincode":"600040","narration":"Electricity bill","trans_type":"Net Banking","amount":35213.27,"ip_address":"103.19.156.163","device":"iPhone 14","receiver_account":"SB89089901","is_fraud":0,"fraud_type":"Normal","risk_score":16.8,"account_age_days":547.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.315,"ip_account_density":7},{"timestamp":"2025-06-19 01:03:00","txn_id":"D3993F64","name":"Arjun Sharma","account_number":"SB95822412","account_type":"Joint","mobile_number":"9914763202","pincode":"602001","narration":"Loan EMI","trans_type":"ATM Withdrawal","amount":19615.22,"ip_address":"103.50.181.18","device":"Laptop-Chrome","receiver_account":"SB23756669","is_fraud":0,"fraud_type":"Normal","risk_score":5.7,"account_age_days":224.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.161,"ip_account_density":19},{"timestamp":"2025-06-19 01:56:00","txn_id":"5FDFC0AB","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"NRI","mobile_number":"9203848421","pincode":"600028","narration":"Medical expense","trans_type":"NEFT","amount":20282.82,"ip_address":"103.198.75.253","device":"iPhone 14","receiver_account":"SB47338124","is_fraud":0,"fraud_type":"Normal","risk_score":23.8,"account_age_days":45.0,"receiver_name":"Anjali Gupta","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.323,"ip_account_density":13},{"timestamp":"2025-06-19 07:52:00","txn_id":"D6BBB155","name":"Arjun Sharma","account_number":"SB95822412","account_type":"Joint","mobile_number":"9914763202","pincode":"600002","narration":"Medical expense","trans_type":"UPI Payment","amount":31961.46,"ip_address":"103.63.42.119","device":"Redmi Note 12","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":9.4,"account_age_days":224.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.378,"ip_account_density":10},{"timestamp":"2025-06-19 13:53:00","txn_id":"4D970ED6","name":"Ramesh Verma","account_number":"SB41227216","account_type":"NRI","mobile_number":"9469319644","pincode":"601302","narration":"Electricity bill","trans_type":"Mobile Banking","amount":43144.0,"ip_address":"103.63.42.119","device":"Vivo V25","receiver_account":"SB66306997","is_fraud":0,"fraud_type":"Normal","risk_score":11.2,"account_age_days":363.0,"receiver_name":"Arun Singh","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.168,"ip_account_density":10},{"timestamp":"2025-06-19 19:06:00","txn_id":"77177F04","name":"Karthik Rajan","account_number":"SB13356886","account_type":"Salary","mobile_number":"9271432881","pincode":"600014","narration":"Petrol expense","trans_type":"Online Transfer","amount":29530.02,"ip_address":"103.143.57.176","device":"Tablet-Android","receiver_account":"SB89254563","is_fraud":0,"fraud_type":"Normal","risk_score":21.8,"account_age_days":896.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.371,"ip_account_density":13},{"timestamp":"2025-06-20 01:02:00","txn_id":"08D5669D","name":"Uma Shankar","account_number":"SB36687537","account_type":"Current","mobile_number":"9883543540","pincode":"600002","narration":"Rent payment","trans_type":"Net Banking","amount":32435.56,"ip_address":"103.240.175.166","device":"Desktop-Firefox","receiver_account":"SB90801586","is_fraud":0,"fraud_type":"Normal","risk_score":5.8,"account_age_days":874.0,"receiver_name":"Anjali Gupta","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.14,"ip_account_density":9},{"timestamp":"2025-06-20 09:13:00","txn_id":"E85EE99B","name":"Dinesh Raj","account_number":"SB97226012","account_type":"NRI","mobile_number":"9593303705","pincode":"600040","narration":"Amazon purchase","trans_type":"ATM Withdrawal","amount":6570.55,"ip_address":"103.50.181.18","device":"ATM Terminal","receiver_account":"SB39958838","is_fraud":0,"fraud_type":"Normal","risk_score":27.5,"account_age_days":4.0,"receiver_name":"Vikram Rathore","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.438,"ip_account_density":19},{"timestamp":"2025-06-20 12:14:00","txn_id":"3718AB09","name":"Pooja Agarwal","account_number":"SB83140807","account_type":"NRI","mobile_number":"9675770529","pincode":"600028","narration":"Insurance premium","trans_type":"Net Banking","amount":39326.33,"ip_address":"103.222.26.98","device":"Laptop-Chrome","receiver_account":"SB36687537","is_fraud":0,"fraud_type":"Normal","risk_score":28.7,"account_age_days":408.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.492,"ip_account_density":6},{"timestamp":"2025-06-20 13:58:00","txn_id":"BBC1DAAC","name":"Priya Nair","account_number":"SB24942603","account_type":"NRI","mobile_number":"9965241839","pincode":"600028","narration":"Loan EMI","trans_type":"IMPS","amount":24043.64,"ip_address":"103.198.75.253","device":"iPhone 14","receiver_account":"SB22575562","is_fraud":0,"fraud_type":"Normal","risk_score":7.6,"account_age_days":304.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.475,"ip_account_density":13},{"timestamp":"2025-06-20 14:58:00","txn_id":"0F7BF700","name":"Arun Menon","account_number":"SB14265799","account_type":"Joint","mobile_number":"9199585092","pincode":"600040","narration":"Subscription fee","trans_type":"NEFT","amount":15616.32,"ip_address":"103.199.15.59","device":"iPhone 14","receiver_account":"SB13561597","is_fraud":0,"fraud_type":"Normal","risk_score":29.0,"account_age_days":843.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.279,"ip_account_density":12},{"timestamp":"2025-06-20 18:05:00","txn_id":"32E0B33E","name":"Priya Nair","account_number":"SB24942603","account_type":"Salary","mobile_number":"9965241839","pincode":"600040","narration":"Loan EMI","trans_type":"Online Transfer","amount":48524.14,"ip_address":"103.19.156.163","device":"Tablet-Android","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":29.7,"account_age_days":304.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":2.0,"churn_rate":0.427,"ip_account_density":7},{"timestamp":"2025-06-20 23:58:00","txn_id":"8EF1BBD2","name":"Deepa Krishnan","account_number":"SB39958838","account_type":"NRI","mobile_number":"9465341213","pincode":"600091","narration":"Petrol expense","trans_type":"UPI Payment","amount":33955.49,"ip_address":"103.214.94.42","device":"iPhone 13","receiver_account":"SB39345092","is_fraud":0,"fraud_type":"Normal","risk_score":9.8,"account_age_days":697.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.344,"ip_account_density":5},{"timestamp":"2025-06-21 00:22:00","txn_id":"2466DCD4","name":"Suresh Babu","account_number":"SB28728463","account_type":"Salary","mobile_number":"9398362082","pincode":"600028","narration":"Rent payment","trans_type":"Online Transfer","amount":33171.64,"ip_address":"103.19.156.163","device":"Laptop-Chrome","receiver_account":"SB83197857","is_fraud":0,"fraud_type":"Normal","risk_score":26.6,"account_age_days":164.0,"receiver_name":"Sneha Nair","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.356,"ip_account_density":7},{"timestamp":"2025-06-21 01:49:00","txn_id":"E6F5F260","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"Salary","mobile_number":"9203848421","pincode":"600096","narration":"Petrol expense","trans_type":"IMPS","amount":21223.71,"ip_address":"103.21.219.60","device":"OnePlus 11","receiver_account":"SB39587039","is_fraud":0,"fraud_type":"Normal","risk_score":20.1,"account_age_days":45.0,"receiver_name":"Arun Singh","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.216,"ip_account_density":6},{"timestamp":"2025-06-21 05:57:00","txn_id":"A31C1A55","name":"Prakash Doss","account_number":"SB47338124","account_type":"Salary","mobile_number":"9414797776","pincode":"602001","narration":"Electricity bill","trans_type":"Online Transfer","amount":22365.62,"ip_address":"103.240.175.166","device":"iPhone 13","receiver_account":"SB21668732","is_fraud":0,"fraud_type":"Normal","risk_score":21.0,"account_age_days":340.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.278,"ip_account_density":9},{"timestamp":"2025-06-21 06:26:00","txn_id":"2FACFEFC","name":"Jaya Devi","account_number":"SB77827638","account_type":"Savings","mobile_number":"9748245888","pincode":"600028","narration":"Medical expense","trans_type":"NEFT","amount":45289.5,"ip_address":"103.84.216.197","device":"iPhone 14","receiver_account":"SB89089901","is_fraud":0,"fraud_type":"Normal","risk_score":27.0,"account_age_days":156.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.306,"ip_account_density":7},{"timestamp":"2025-06-21 10:33:00","txn_id":"D5570F0E","name":"Deepa Krishnan","account_number":"SB39958838","account_type":"Joint","mobile_number":"9465341213","pincode":"600040","narration":"Electricity bill","trans_type":"IMPS","amount":22076.31,"ip_address":"103.98.70.254","device":"Samsung S23","receiver_account":"SB39345092","is_fraud":0,"fraud_type":"Normal","risk_score":13.7,"account_age_days":697.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.265,"ip_account_density":11},{"timestamp":"2025-06-21 14:33:00","txn_id":"CE6E0F4C","name":"Manoj Patel","account_number":"SB89254563","account_type":"Joint","mobile_number":"9461415646","pincode":"600014","narration":"Subscription fee","trans_type":"IMPS","amount":7419.16,"ip_address":"103.199.15.59","device":"Laptop-Chrome","receiver_account":"SB39958838","is_fraud":0,"fraud_type":"Normal","risk_score":14.8,"account_age_days":547.0,"receiver_name":"Vikram Rathore","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.41,"ip_account_density":12},{"timestamp":"2025-06-21 19:33:00","txn_id":"0B1854CB","name":"Dinesh Raj","account_number":"SB97226012","account_type":"Joint","mobile_number":"9593303705","pincode":"600096","narration":"Subscription fee","trans_type":"Online Transfer","amount":6703.68,"ip_address":"103.172.69.180","device":"Samsung S23","receiver_account":"SB22575562","is_fraud":0,"fraud_type":"Normal","risk_score":16.6,"account_age_days":4.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.475,"ip_account_density":5},{"timestamp":"2025-06-21 22:14:00","txn_id":"2E9D28E3","name":"Uma Shankar","account_number":"SB36687537","account_type":"Savings","mobile_number":"9883543540","pincode":"600091","narration":"Petrol expense","trans_type":"UPI Payment","amount":6186.82,"ip_address":"103.214.94.42","device":"iPhone 13","receiver_account":"SB23756669","is_fraud":0,"fraud_type":"Normal","risk_score":25.2,"account_age_days":874.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.235,"ip_account_density":5},{"timestamp":"2025-06-22 02:38:00","txn_id":"F9F24E96","name":"Sindhu Rao","account_number":"SB13999315","account_type":"Joint","mobile_number":"9507943839","pincode":"600096","narration":"Insurance premium","trans_type":"ATM Withdrawal","amount":37869.69,"ip_address":"103.12.170.59","device":"Laptop-Chrome","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":7.8,"account_age_days":504.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.281,"ip_account_density":7},{"timestamp":"2025-06-22 16:38:00","txn_id":"7F0B9C27","name":"Prakash Doss","account_number":"SB47338124","account_type":"NRI","mobile_number":"9414797776","pincode":"600001","narration":"Petrol expense","trans_type":"IMPS","amount":12475.94,"ip_address":"103.198.75.253","device":"Vivo V25","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":5.0,"account_age_days":340.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.333,"ip_account_density":13},{"timestamp":"2025-06-22 17:34:00","txn_id":"5ABFACFE","name":"Vijay Kumar","account_number":"SB83197857","account_type":"Joint","mobile_number":"9331191390","pincode":"601302","narration":"Grocery payment","trans_type":"IMPS","amount":2473.11,"ip_address":"103.44.137.187","device":"Laptop-Chrome","receiver_account":"SB13561597","is_fraud":0,"fraud_type":"Normal","risk_score":11.3,"account_age_days":630.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.128,"ip_account_density":8},{"timestamp":"2025-06-22 20:14:00","txn_id":"D4130870","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"NRI","mobile_number":"9203848421","pincode":"600001","narration":"Petrol expense","trans_type":"UPI Payment","amount":23173.1,"ip_address":"103.161.159.227","device":"iPhone 14","receiver_account":"SB39345092","is_fraud":0,"fraud_type":"Normal","risk_score":26.2,"account_age_days":45.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.164,"ip_account_density":11},{"timestamp":"2025-06-22 22:29:00","txn_id":"CFD93B19","name":"Arun Menon","account_number":"SB14265799","account_type":"Current","mobile_number":"9199585092","pincode":"600028","narration":"Subscription fee","trans_type":"UPI Payment","amount":2908.58,"ip_address":"103.95.91.54","device":"ATM Terminal","receiver_account":"SB13561597","is_fraud":0,"fraud_type":"Normal","risk_score":27.1,"account_age_days":843.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.17,"ip_account_density":10},{"timestamp":"2025-06-23 01:47:00","txn_id":"4D2C4C71","name":"Nithya Chandran","account_number":"SB13561597","account_type":"Current","mobile_number":"9966647391","pincode":"600002","narration":"Insurance premium","trans_type":"Net Banking","amount":39605.31,"ip_address":"103.44.137.187","device":"Laptop-Chrome","receiver_account":"SB10872248","is_fraud":0,"fraud_type":"Normal","risk_score":24.7,"account_age_days":639.0,"receiver_name":"Rahul Verma","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.424,"ip_account_density":8},{"timestamp":"2025-06-23 20:02:00","txn_id":"C830FCA6","name":"Vinoth Kumar","account_number":"SB70291817","account_type":"Salary","mobile_number":"9184611066","pincode":"603202","narration":"Electricity bill","trans_type":"IMPS","amount":19147.63,"ip_address":"103.21.219.60","device":"Redmi Note 12","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":22.3,"account_age_days":290.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.135,"ip_account_density":6},{"timestamp":"2025-06-24 10:05:00","txn_id":"E71F8890","name":"Prakash Doss","account_number":"SB47338124","account_type":"Current","mobile_number":"9414797776","pincode":"600014","narration":"Rent payment","trans_type":"NEFT","amount":34850.52,"ip_address":"103.222.26.98","device":"Samsung S23","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":15.2,"account_age_days":340.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.202,"ip_account_density":6},{"timestamp":"2025-06-24 10:16:00","txn_id":"165EF218","name":"Rahul Gupta","account_number":"SB42868828","account_type":"Current","mobile_number":"9553778756","pincode":"600002","narration":"Monthly salary credit","trans_type":"ATM Withdrawal","amount":1235.59,"ip_address":"103.72.117.163","device":"iPhone 13","receiver_account":"SB89254563","is_fraud":0,"fraud_type":"Normal","risk_score":5.4,"account_age_days":927.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.176,"ip_account_density":9},{"timestamp":"2025-06-24 12:29:00","txn_id":"C019BFBA","name":"Uma Shankar","account_number":"SB36687537","account_type":"Joint","mobile_number":"9883543540","pincode":"600001","narration":"Rent payment","trans_type":"IMPS","amount":18408.08,"ip_address":"103.98.70.254","device":"ATM Terminal","receiver_account":"SB66306997","is_fraud":0,"fraud_type":"Normal","risk_score":6.3,"account_age_days":874.0,"receiver_name":"Arun Singh","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.4,"ip_account_density":11},{"timestamp":"2025-06-24 13:45:00","txn_id":"33FEB9C3","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"Salary","mobile_number":"9203848421","pincode":"603202","narration":"Petrol expense","trans_type":"Online Transfer","amount":33559.23,"ip_address":"103.143.57.176","device":"Vivo V25","receiver_account":"SB10872248","is_fraud":0,"fraud_type":"Normal","risk_score":21.6,"account_age_days":45.0,"receiver_name":"Rahul Verma","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.449,"ip_account_density":13},{"timestamp":"2025-06-24 19:08:00","txn_id":"DBBB7826","name":"Vijay Kumar","account_number":"SB83197857","account_type":"Salary","mobile_number":"9331191390","pincode":"601302","narration":"Amazon purchase","trans_type":"Online Transfer","amount":1929.04,"ip_address":"103.199.15.59","device":"OnePlus 11","receiver_account":"SB97226012","is_fraud":0,"fraud_type":"Normal","risk_score":9.0,"account_age_days":630.0,"receiver_name":"Arun Singh","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.155,"ip_account_density":12},{"timestamp":"2025-06-24 20:17:00","txn_id":"757D20DF","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"NRI","mobile_number":"9203848421","pincode":"603202","narration":"Grocery payment","trans_type":"ATM Withdrawal","amount":48766.6,"ip_address":"103.19.156.163","device":"Laptop-Chrome","receiver_account":"SB39587039","is_fraud":0,"fraud_type":"Normal","risk_score":29.7,"account_age_days":45.0,"receiver_name":"Arun Singh","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.214,"ip_account_density":7},{"timestamp":"2025-06-24 20:21:00","txn_id":"B819F9DE","name":"Pooja Agarwal","account_number":"SB83140807","account_type":"Salary","mobile_number":"9675770529","pincode":"601302","narration":"Insurance premium","trans_type":"UPI Payment","amount":12944.48,"ip_address":"103.12.170.59","device":"OnePlus 11","receiver_account":"SB89254563","is_fraud":0,"fraud_type":"Normal","risk_score":8.0,"account_age_days":408.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.42,"ip_account_density":7},{"timestamp":"2025-06-24 20:59:00","txn_id":"7EECCBCB","name":"Arjun Sharma","account_number":"SB95822412","account_type":"Current","mobile_number":"9914763202","pincode":"600096","narration":"Amazon purchase","trans_type":"NEFT","amount":32701.67,"ip_address":"103.95.91.54","device":"Laptop-Chrome","receiver_account":"SB21668732","is_fraud":0,"fraud_type":"Normal","risk_score":21.1,"account_age_days":224.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.363,"ip_account_density":10},{"timestamp":"2025-06-24 22:48:00","txn_id":"2D984E47","name":"Manoj Patel","account_number":"SB89254563","account_type":"NRI","mobile_number":"9461415646","pincode":"600096","narration":"Amazon purchase","trans_type":"UPI Payment","amount":43545.28,"ip_address":"103.72.117.163","device":"iPhone 13","receiver_account":"SB14265799","is_fraud":0,"fraud_type":"Normal","risk_score":10.8,"account_age_days":547.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.399,"ip_account_density":9},{"timestamp":"2025-06-24 23:18:00","txn_id":"5315AA36","name":"Priya Nair","account_number":"SB24942603","account_type":"Current","mobile_number":"9965241839","pincode":"601302","narration":"Grocery payment","trans_type":"Net Banking","amount":1107.14,"ip_address":"103.95.91.54","device":"ATM Terminal","receiver_account":"SB39345092","is_fraud":0,"fraud_type":"Normal","risk_score":16.0,"account_age_days":304.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.298,"ip_account_density":10},{"timestamp":"2025-06-25 00:01:00","txn_id":"AEBBB715","name":"Ramesh Verma","account_number":"SB41227216","account_type":"Joint","mobile_number":"9469319644","pincode":"601302","narration":"Monthly salary credit","trans_type":"Mobile Banking","amount":19650.63,"ip_address":"103.240.175.166","device":"Vivo V25","receiver_account":"SB83140807","is_fraud":0,"fraud_type":"Normal","risk_score":5.4,"account_age_days":363.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.213,"ip_account_density":9},{"timestamp":"2025-06-25 00:36:00","txn_id":"A61F4FC7","name":"Rekha Singh","account_number":"SB66629388","account_type":"Salary","mobile_number":"9209747451","pincode":"601302","narration":"Petrol expense","trans_type":"ATM Withdrawal","amount":30791.44,"ip_address":"103.50.181.18","device":"Samsung S23","receiver_account":"SB21668732","is_fraud":0,"fraud_type":"Normal","risk_score":15.0,"account_age_days":699.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.484,"ip_account_density":19},{"timestamp":"2025-06-25 02:42:00","txn_id":"A4068BC9","name":"Pooja Agarwal","account_number":"SB83140807","account_type":"Joint","mobile_number":"9675770529","pincode":"600014","narration":"Rent payment","trans_type":"UPI Payment","amount":11276.19,"ip_address":"103.221.93.148","device":"iPhone 13","receiver_account":"SB83140807","is_fraud":0,"fraud_type":"Normal","risk_score":18.6,"account_age_days":408.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.455,"ip_account_density":14},{"timestamp":"2025-06-25 07:49:00","txn_id":"42BA3E78","name":"Madhavi Latha","account_number":"SB89089901","account_type":"NRI","mobile_number":"9692749116","pincode":"603202","narration":"Petrol expense","trans_type":"Online Transfer","amount":30645.25,"ip_address":"103.214.94.42","device":"iPhone 14","receiver_account":"SB39958838","is_fraud":0,"fraud_type":"Normal","risk_score":11.8,"account_age_days":465.0,"receiver_name":"Vikram Rathore","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.277,"ip_account_density":5},{"timestamp":"2025-06-25 08:44:00","txn_id":"D9CB8704","name":"Vijay Kumar","account_number":"SB83197857","account_type":"Salary","mobile_number":"9331191390","pincode":"600014","narration":"Grocery payment","trans_type":"IMPS","amount":37174.1,"ip_address":"103.72.117.163","device":"OnePlus 11","receiver_account":"SB24942603","is_fraud":0,"fraud_type":"Normal","risk_score":21.7,"account_age_days":630.0,"receiver_name":"Priya Sharma","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.314,"ip_account_density":9},{"timestamp":"2025-06-25 10:13:00","txn_id":"949FA4E0","name":"Meena Pillai","account_number":"SB46913810","account_type":"Joint","mobile_number":"9849621470","pincode":"600040","narration":"Loan EMI","trans_type":"ATM Withdrawal","amount":30491.69,"ip_address":"103.12.170.59","device":"Redmi Note 12","receiver_account":"SB21668732","is_fraud":0,"fraud_type":"Normal","risk_score":7.7,"account_age_days":133.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.278,"ip_account_density":7},{"timestamp":"2025-06-25 14:38:00","txn_id":"7C93E54B","name":"Harish Naidu","account_number":"SB66306997","account_type":"Savings","mobile_number":"9234031070","pincode":"600001","narration":"Electricity bill","trans_type":"ATM Withdrawal","amount":37844.58,"ip_address":"103.221.93.148","device":"Samsung S23","receiver_account":"SB83197857","is_fraud":0,"fraud_type":"Normal","risk_score":16.1,"account_age_days":244.0,"receiver_name":"Sneha Nair","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.316,"ip_account_density":14},{"timestamp":"2025-06-25 23:12:00","txn_id":"C461C3B7","name":"Prakash Doss","account_number":"SB47338124","account_type":"Salary","mobile_number":"9414797776","pincode":"600001","narration":"Medical expense","trans_type":"Online Transfer","amount":26236.06,"ip_address":"103.143.57.176","device":"OnePlus 11","receiver_account":"SB66629388","is_fraud":0,"fraud_type":"Normal","risk_score":15.8,"account_age_days":340.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.105,"ip_account_density":13},{"timestamp":"2025-06-25 23:30:00","txn_id":"1DC8BDAE","name":"Ganesh Murugan","account_number":"SB90801586","account_type":"Current","mobile_number":"9384027113","pincode":"601302","narration":"Medical expense","trans_type":"ATM Withdrawal","amount":5169.13,"ip_address":"103.44.137.187","device":"Laptop-Chrome","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":15.3,"account_age_days":580.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.297,"ip_account_density":8},{"timestamp":"2025-06-26 01:36:00","txn_id":"BD91DC56","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Current","mobile_number":"9146654552","pincode":"600001","narration":"Subscription fee","trans_type":"NEFT","amount":8940.35,"ip_address":"103.199.15.59","device":"Desktop-Firefox","receiver_account":"SB42868828","is_fraud":0,"fraud_type":"Normal","risk_score":25.5,"account_age_days":463.0,"receiver_name":"Karan Malhotra","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.227,"ip_account_density":12},{"timestamp":"2025-06-26 06:25:00","txn_id":"61A0373B","name":"Prakash Doss","account_number":"SB47338124","account_type":"Salary","mobile_number":"9414797776","pincode":"600028","narration":"Electricity bill","trans_type":"IMPS","amount":24929.03,"ip_address":"103.221.93.148","device":"Samsung S23","receiver_account":"SB42868828","is_fraud":0,"fraud_type":"Normal","risk_score":20.7,"account_age_days":340.0,"receiver_name":"Karan Malhotra","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.373,"ip_account_density":14},{"timestamp":"2025-06-26 08:35:00","txn_id":"D84A7CB7","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Salary","mobile_number":"9146654552","pincode":"600096","narration":"Subscription fee","trans_type":"IMPS","amount":15097.44,"ip_address":"103.237.164.177","device":"iPhone 13","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":7.5,"account_age_days":463.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.161,"ip_account_density":8},{"timestamp":"2025-06-26 09:13:00","txn_id":"E4428167","name":"Suresh Babu","account_number":"SB28728463","account_type":"Current","mobile_number":"9398362082","pincode":"600091","narration":"Electricity bill","trans_type":"Net Banking","amount":45076.29,"ip_address":"103.161.159.227","device":"Vivo V25","receiver_account":"SB89089901","is_fraud":0,"fraud_type":"Normal","risk_score":29.6,"account_age_days":164.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.234,"ip_account_density":11},{"timestamp":"2025-06-26 14:03:00","txn_id":"AC0F9D03","name":"Vijay Kumar","account_number":"SB83197857","account_type":"Salary","mobile_number":"9331191390","pincode":"602001","narration":"Grocery payment","trans_type":"UPI Payment","amount":23356.25,"ip_address":"103.221.93.148","device":"iPhone 14","receiver_account":"SB66629388","is_fraud":0,"fraud_type":"Normal","risk_score":25.8,"account_age_days":630.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.118,"ip_account_density":14},{"timestamp":"2025-06-26 15:37:00","txn_id":"6214D5ED","name":"Deepa Krishnan","account_number":"SB39958838","account_type":"Current","mobile_number":"9465341213","pincode":"600014","narration":"Subscription fee","trans_type":"Mobile Banking","amount":45149.04,"ip_address":"103.172.69.180","device":"iPhone 13","receiver_account":"SB24942603","is_fraud":0,"fraud_type":"Normal","risk_score":25.6,"account_age_days":697.0,"receiver_name":"Priya Sharma","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.115,"ip_account_density":5},{"timestamp":"2025-06-26 20:01:00","txn_id":"CC228DB3","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Savings","mobile_number":"9146654552","pincode":"600091","narration":"Rent payment","trans_type":"ATM Withdrawal","amount":39455.42,"ip_address":"103.222.26.98","device":"Samsung S23","receiver_account":"SB70291817","is_fraud":0,"fraud_type":"Normal","risk_score":24.1,"account_age_days":463.0,"receiver_name":"Karan Malhotra","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.37,"ip_account_density":6},{"timestamp":"2025-06-27 02:45:00","txn_id":"E5AF18B7","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"Joint","mobile_number":"9203848421","pincode":"600014","narration":"Amazon purchase","trans_type":"UPI Payment","amount":22632.92,"ip_address":"103.240.175.166","device":"iPhone 13","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":11.9,"account_age_days":45.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.271,"ip_account_density":9},{"timestamp":"2025-06-27 02:57:00","txn_id":"C28D6B3F","name":"Saranya Venkat","account_number":"SB39587039","account_type":"Current","mobile_number":"9506448196","pincode":"601302","narration":"Rent payment","trans_type":"UPI Payment","amount":22073.88,"ip_address":"103.161.159.227","device":"Desktop-Firefox","receiver_account":"SB89254563","is_fraud":0,"fraud_type":"Normal","risk_score":21.7,"account_age_days":546.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.375,"ip_account_density":11},{"timestamp":"2025-06-27 11:58:00","txn_id":"7284F591","name":"Ramesh Verma","account_number":"SB41227216","account_type":"Joint","mobile_number":"9469319644","pincode":"600001","narration":"Electricity bill","trans_type":"IMPS","amount":10763.41,"ip_address":"103.172.69.180","device":"ATM Terminal","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":14.4,"account_age_days":363.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":1.0,"churn_rate":0.363,"ip_account_density":5},{"timestamp":"2025-06-27 15:00:00","txn_id":"23807C36","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"Savings","mobile_number":"9203848421","pincode":"600001","narration":"Insurance premium","trans_type":"ATM Withdrawal","amount":41830.67,"ip_address":"103.143.57.176","device":"iPhone 13","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":15.6,"account_age_days":45.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":1.0,"churn_rate":0.428,"ip_account_density":13},{"timestamp":"2025-06-27 19:56:00","txn_id":"947C7946","name":"Arjun Sharma","account_number":"SB95822412","account_type":"NRI","mobile_number":"9914763202","pincode":"600091","narration":"Subscription fee","trans_type":"ATM Withdrawal","amount":32558.79,"ip_address":"103.63.42.119","device":"Vivo V25","receiver_account":"SB85329037","is_fraud":0,"fraud_type":"Normal","risk_score":15.2,"account_age_days":224.0,"receiver_name":"Priya Sharma","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.323,"ip_account_density":10},{"timestamp":"2025-06-28 09:45:00","txn_id":"9FC9395A","name":"Meena Pillai","account_number":"SB46913810","account_type":"Savings","mobile_number":"9849621470","pincode":"601302","narration":"Electricity bill","trans_type":"Mobile Banking","amount":15323.57,"ip_address":"103.161.159.227","device":"iPhone 14","receiver_account":"SB89254563","is_fraud":0,"fraud_type":"Normal","risk_score":24.9,"account_age_days":133.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.225,"ip_account_density":11},{"timestamp":"2025-06-28 10:54:00","txn_id":"55DB8101","name":"Uma Shankar","account_number":"SB36687537","account_type":"Salary","mobile_number":"9883543540","pincode":"602001","narration":"Amazon purchase","trans_type":"UPI Payment","amount":45314.16,"ip_address":"103.221.93.148","device":"Samsung S23","receiver_account":"SB85329037","is_fraud":0,"fraud_type":"Normal","risk_score":15.6,"account_age_days":874.0,"receiver_name":"Priya Sharma","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.344,"ip_account_density":14},{"timestamp":"2025-06-28 14:11:00","txn_id":"C0522BCA","name":"Dinesh Raj","account_number":"SB97226012","account_type":"Salary","mobile_number":"9593303705","pincode":"602001","narration":"Rent payment","trans_type":"Online Transfer","amount":49264.06,"ip_address":"103.198.75.253","device":"OnePlus 11","receiver_account":"SB39587039","is_fraud":0,"fraud_type":"Normal","risk_score":17.4,"account_age_days":4.0,"receiver_name":"Arun Singh","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.141,"ip_account_density":13},{"timestamp":"2025-06-28 19:11:00","txn_id":"84409FD7","name":"Vinoth Kumar","account_number":"SB70291817","account_type":"Joint","mobile_number":"9184611066","pincode":"601302","narration":"Electricity bill","trans_type":"Net Banking","amount":7175.2,"ip_address":"103.63.42.119","device":"iPhone 14","receiver_account":"SB21668732","is_fraud":0,"fraud_type":"Normal","risk_score":10.0,"account_age_days":290.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.122,"ip_account_density":10},{"timestamp":"2025-06-28 19:27:00","txn_id":"F78A8D69","name":"Karthik Rajan","account_number":"SB13356886","account_type":"Current","mobile_number":"9271432881","pincode":"601302","narration":"Electricity bill","trans_type":"Online Transfer","amount":13377.74,"ip_address":"103.172.69.180","device":"OnePlus 11","receiver_account":"SB22575562","is_fraud":0,"fraud_type":"Normal","risk_score":13.2,"account_age_days":896.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.398,"ip_account_density":5},{"timestamp":"2025-06-28 19:29:00","txn_id":"F898BCAB","name":"Arun Menon","account_number":"SB14265799","account_type":"Current","mobile_number":"9199585092","pincode":"600040","narration":"Electricity bill","trans_type":"ATM Withdrawal","amount":37376.95,"ip_address":"103.143.57.176","device":"Vivo V25","receiver_account":"SB83140807","is_fraud":0,"fraud_type":"Normal","risk_score":19.6,"account_age_days":843.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.181,"ip_account_density":13},{"timestamp":"2025-06-28 19:40:00","txn_id":"B0379B22","name":"Ganesh Murugan","account_number":"SB90801586","account_type":"NRI","mobile_number":"9384027113","pincode":"600091","narration":"Loan EMI","trans_type":"ATM Withdrawal","amount":22268.26,"ip_address":"103.98.70.254","device":"ATM Terminal","receiver_account":"SB85329037","is_fraud":0,"fraud_type":"Normal","risk_score":12.6,"account_age_days":580.0,"receiver_name":"Priya Sharma","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.472,"ip_account_density":11},{"timestamp":"2025-06-28 21:22:00","txn_id":"0C523F0B","name":"Prakash Doss","account_number":"SB47338124","account_type":"Savings","mobile_number":"9414797776","pincode":"600096","narration":"Insurance premium","trans_type":"ATM Withdrawal","amount":48426.24,"ip_address":"103.63.42.119","device":"Samsung S23","receiver_account":"SB36687537","is_fraud":0,"fraud_type":"Normal","risk_score":10.3,"account_age_days":340.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.463,"ip_account_density":10},{"timestamp":"2025-06-28 21:55:00","txn_id":"85FF5A44","name":"Karthik Rajan","account_number":"SB13356886","account_type":"Savings","mobile_number":"9271432881","pincode":"603202","narration":"Subscription fee","trans_type":"IMPS","amount":19531.88,"ip_address":"103.84.216.197","device":"Tablet-Android","receiver_account":"SB39587039","is_fraud":0,"fraud_type":"Normal","risk_score":23.5,"account_age_days":896.0,"receiver_name":"Arun Singh","receiver_pincode":"400001","velocity_l6h":2.0,"churn_rate":0.151,"ip_account_density":7},{"timestamp":"2025-06-29 03:17:00","txn_id":"110B4072","name":"Ramesh Verma","account_number":"SB41227216","account_type":"NRI","mobile_number":"9469319644","pincode":"602001","narration":"Amazon purchase","trans_type":"NEFT","amount":22060.94,"ip_address":"103.84.216.197","device":"Vivo V25","receiver_account":"SB89254563","is_fraud":0,"fraud_type":"Normal","risk_score":26.3,"account_age_days":363.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.329,"ip_account_density":7},{"timestamp":"2025-06-29 04:02:00","txn_id":"06A54C6F","name":"Karthik Rajan","account_number":"SB13356886","account_type":"Savings","mobile_number":"9271432881","pincode":"600028","narration":"Rent payment","trans_type":"Net Banking","amount":1508.81,"ip_address":"103.198.75.253","device":"OnePlus 11","receiver_account":"SB42868828","is_fraud":0,"fraud_type":"Normal","risk_score":16.8,"account_age_days":896.0,"receiver_name":"Karan Malhotra","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.222,"ip_account_density":13},{"timestamp":"2025-06-29 08:04:00","txn_id":"BCC62BFF","name":"Harish Naidu","account_number":"SB66306997","account_type":"Current","mobile_number":"9234031070","pincode":"601302","narration":"Amazon purchase","trans_type":"Net Banking","amount":28404.91,"ip_address":"103.84.216.197","device":"ATM Terminal","receiver_account":"SB36687537","is_fraud":0,"fraud_type":"Normal","risk_score":28.1,"account_age_days":244.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.496,"ip_account_density":7},{"timestamp":"2025-06-29 12:43:00","txn_id":"EAE2AE87","name":"Harish Naidu","account_number":"SB66306997","account_type":"Current","mobile_number":"9234031070","pincode":"600002","narration":"Monthly salary credit","trans_type":"UPI Payment","amount":39536.22,"ip_address":"103.221.93.148","device":"iPhone 13","receiver_account":"SB66629388","is_fraud":0,"fraud_type":"Normal","risk_score":23.3,"account_age_days":244.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":2.0,"churn_rate":0.26,"ip_account_density":14},{"timestamp":"2025-06-30 00:41:00","txn_id":"C2AB37A3","name":"Rahul Gupta","account_number":"SB42868828","account_type":"Salary","mobile_number":"9553778756","pincode":"601302","narration":"Loan EMI","trans_type":"Net Banking","amount":46818.85,"ip_address":"103.161.159.227","device":"ATM Terminal","receiver_account":"SB13561597","is_fraud":0,"fraud_type":"Normal","risk_score":30.0,"account_age_days":927.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.262,"ip_account_density":11},{"timestamp":"2025-06-30 01:19:00","txn_id":"8D65B8A5","name":"Anitha Reddy","account_number":"SB23756669","account_type":"Current","mobile_number":"9266944844","pincode":"600028","narration":"Electricity bill","trans_type":"Online Transfer","amount":2787.58,"ip_address":"103.98.70.254","device":"iPhone 13","receiver_account":"SB89089901","is_fraud":0,"fraud_type":"Normal","risk_score":24.2,"account_age_days":906.0,"receiver_name":"Vikram Rathore","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.242,"ip_account_density":11},{"timestamp":"2025-06-30 01:30:00","txn_id":"50F838BE","name":"Senthil Kumar","account_number":"SB85329037","account_type":"Salary","mobile_number":"9146654552","pincode":"602001","narration":"Monthly salary credit","trans_type":"Net Banking","amount":5821.11,"ip_address":"103.198.75.253","device":"Vivo V25","receiver_account":"SB83140807","is_fraud":0,"fraud_type":"Normal","risk_score":14.1,"account_age_days":463.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.281,"ip_account_density":13},{"timestamp":"2025-06-30 01:47:00","txn_id":"9C90EA17","name":"Rekha Singh","account_number":"SB66629388","account_type":"Salary","mobile_number":"9209747451","pincode":"603202","narration":"Medical expense","trans_type":"Net Banking","amount":32108.19,"ip_address":"103.240.175.166","device":"Samsung S23","receiver_account":"SB36687537","is_fraud":0,"fraud_type":"Normal","risk_score":10.8,"account_age_days":699.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.352,"ip_account_density":9},{"timestamp":"2025-06-30 05:46:00","txn_id":"DB538CCD","name":"Madhavi Latha","account_number":"SB89089901","account_type":"Joint","mobile_number":"9692749116","pincode":"602001","narration":"Loan EMI","trans_type":"Online Transfer","amount":39638.76,"ip_address":"103.161.159.227","device":"Vivo V25","receiver_account":"SB77827638","is_fraud":0,"fraud_type":"Normal","risk_score":8.1,"account_age_days":465.0,"receiver_name":"Priya Sharma","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.243,"ip_account_density":11},{"timestamp":"2025-06-30 07:37:00","txn_id":"41F01F10","name":"Uma Shankar","account_number":"SB36687537","account_type":"Joint","mobile_number":"9883543540","pincode":"602001","narration":"Insurance premium","trans_type":"Online Transfer","amount":11415.66,"ip_address":"103.199.15.59","device":"iPhone 14","receiver_account":"SB95822412","is_fraud":0,"fraud_type":"Normal","risk_score":10.1,"account_age_days":874.0,"receiver_name":"Karan Malhotra","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.341,"ip_account_density":12},{"timestamp":"2025-06-30 08:28:00","txn_id":"48C507BC","name":"Rahul Gupta","account_number":"SB42868828","account_type":"Salary","mobile_number":"9553778756","pincode":"600091","narration":"Amazon purchase","trans_type":"Net Banking","amount":4305.83,"ip_address":"103.198.75.253","device":"Tablet-Android","receiver_account":"SB66629388","is_fraud":0,"fraud_type":"Normal","risk_score":15.0,"account_age_days":927.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.414,"ip_account_density":13},{"timestamp":"2025-06-30 09:27:00","txn_id":"5E2F8E53","name":"Saranya Venkat","account_number":"SB39587039","account_type":"NRI","mobile_number":"9506448196","pincode":"600002","narration":"Medical expense","trans_type":"NEFT","amount":29996.48,"ip_address":"103.63.42.119","device":"Tablet-Android","receiver_account":"SB83197857","is_fraud":0,"fraud_type":"Normal","risk_score":29.3,"account_age_days":546.0,"receiver_name":"Sneha Nair","receiver_pincode":"700001","velocity_l6h":1.0,"churn_rate":0.33,"ip_account_density":10},{"timestamp":"2025-06-30 13:38:00","txn_id":"BA93D31D","name":"Madhavi Latha","account_number":"SB89089901","account_type":"Savings","mobile_number":"9692749116","pincode":"603202","narration":"Monthly salary credit","trans_type":"UPI Payment","amount":26870.89,"ip_address":"103.240.175.166","device":"Samsung S23","receiver_account":"SB41227216","is_fraud":0,"fraud_type":"Normal","risk_score":21.2,"account_age_days":465.0,"receiver_name":"Priya Sharma","receiver_pincode":"110001","velocity_l6h":1.0,"churn_rate":0.496,"ip_account_density":9},{"timestamp":"2025-06-30 15:06:00","txn_id":"0AD33DBE","name":"Sindhu Rao","account_number":"SB13999315","account_type":"Joint","mobile_number":"9507943839","pincode":"601302","narration":"Grocery payment","trans_type":"Online Transfer","amount":16444.54,"ip_address":"103.198.75.253","device":"Samsung S23","receiver_account":"SB42868828","is_fraud":0,"fraud_type":"Normal","risk_score":11.9,"account_age_days":504.0,"receiver_name":"Karan Malhotra","receiver_pincode":"560001","velocity_l6h":1.0,"churn_rate":0.172,"ip_account_density":13},{"timestamp":"2025-06-30 18:38:00","txn_id":"A74605E4","name":"Balaji Natarajan","account_number":"SB22575562","account_type":"Joint","mobile_number":"9203848421","pincode":"600040","narration":"Monthly salary credit","trans_type":"ATM Withdrawal","amount":14761.19,"ip_address":"103.95.91.54","device":"ATM Terminal","receiver_account":"SB13356886","is_fraud":0,"fraud_type":"Normal","risk_score":22.2,"account_age_days":45.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600002","velocity_l6h":1.0,"churn_rate":0.167,"ip_account_density":10},{"timestamp":"2025-06-30 19:11:00","txn_id":"4E2BC6F6","name":"Jaya Devi","account_number":"SB77827638","account_type":"Current","mobile_number":"9748245888","pincode":"600028","narration":"Amazon purchase","trans_type":"UPI Payment","amount":36366.96,"ip_address":"103.237.164.177","device":"iPhone 13","receiver_account":"SB21668732","is_fraud":0,"fraud_type":"Normal","risk_score":29.5,"account_age_days":156.0,"receiver_name":"Arun Singh","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.257,"ip_account_density":8},{"timestamp":"2025-06-30 19:12:00","txn_id":"05D551C3","name":"Harish Naidu","account_number":"SB66306997","account_type":"Salary","mobile_number":"9234031070","pincode":"600096","narration":"Loan EMI","trans_type":"NEFT","amount":45030.9,"ip_address":"103.63.42.119","device":"Samsung S23","receiver_account":"SB23756669","is_fraud":0,"fraud_type":"Normal","risk_score":10.6,"account_age_days":244.0,"receiver_name":"Karan Malhotra","receiver_pincode":"600001","velocity_l6h":1.0,"churn_rate":0.263,"ip_account_density":10},{"timestamp":"2025-06-30 19:16:00","txn_id":"971284F3","name":"Sindhu Rao","account_number":"SB13999315","account_type":"Joint","mobile_number":"9507943839","pincode":"600040","narration":"Rent payment","trans_type":"NEFT","amount":42740.11,"ip_address":"103.12.170.59","device":"OnePlus 11","receiver_account":"SB14265799","is_fraud":0,"fraud_type":"Normal","risk_score":19.3,"account_age_days":504.0,"receiver_name":"Sneha Nair","receiver_pincode":"560001","velocity_l6h":2.0,"churn_rate":0.375,"ip_account_density":7},{"timestamp":"2025-06-30 20:57:00","txn_id":"64B45C14","name":"Karthik Rajan","account_number":"SB13356886","account_type":"Current","mobile_number":"9271432881","pincode":"602001","narration":"Monthly salary credit","trans_type":"Net Banking","amount":18776.19,"ip_address":"103.143.57.176","device":"Redmi Note 12","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":8.2,"account_age_days":896.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.496,"ip_account_density":13},{"timestamp":"2025-07-01 02:34:00","txn_id":"12F25055","name":"Uma Shankar","account_number":"SB36687537","account_type":"Joint","mobile_number":"9883543540","pincode":"603202","narration":"Electricity bill","trans_type":"NEFT","amount":32918.63,"ip_address":"103.98.70.254","device":"iPhone 13","receiver_account":"SB13999315","is_fraud":0,"fraud_type":"Normal","risk_score":28.5,"account_age_days":874.0,"receiver_name":"Anjali Gupta","receiver_pincode":"400001","velocity_l6h":1.0,"churn_rate":0.129,"ip_account_density":11},{"timestamp":"2025-07-02 10:00:00","txn_id":"FAN0","name":"Mule0","account_number":"MULE_ACC_0","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":5000.0,"ip_address":"103.50.181.18","device":"OnePlus 11","receiver_account":"COLL_ACC_01","is_fraud":1,"fraud_type":"Mule Collection","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.965,"ip_account_density":19},{"timestamp":"2025-07-02 10:01:00","txn_id":"FAN1","name":"Mule1","account_number":"MULE_ACC_1","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":5000.0,"ip_address":"103.50.181.18","device":"OnePlus 11","receiver_account":"COLL_ACC_01","is_fraud":1,"fraud_type":"Mule Collection","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.918,"ip_account_density":19},{"timestamp":"2025-07-02 10:02:00","txn_id":"FAN2","name":"Mule2","account_number":"MULE_ACC_2","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":5000.0,"ip_address":"103.50.181.18","device":"OnePlus 11","receiver_account":"COLL_ACC_01","is_fraud":1,"fraud_type":"Mule Collection","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.948,"ip_account_density":19},{"timestamp":"2025-07-02 10:03:00","txn_id":"FAN3","name":"Mule3","account_number":"MULE_ACC_3","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":5000.0,"ip_address":"103.50.181.18","device":"OnePlus 11","receiver_account":"COLL_ACC_01","is_fraud":1,"fraud_type":"Mule Collection","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.975,"ip_account_density":19},{"timestamp":"2025-07-02 10:04:00","txn_id":"FAN4","name":"Mule4","account_number":"MULE_ACC_4","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":5000.0,"ip_address":"103.50.181.18","device":"OnePlus 11","receiver_account":"COLL_ACC_01","is_fraud":1,"fraud_type":"Mule Collection","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.972,"ip_account_density":19},{"timestamp":"2025-07-02 10:05:00","txn_id":"FAN5","name":"Mule5","account_number":"MULE_ACC_5","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":5000.0,"ip_address":"103.50.181.18","device":"OnePlus 11","receiver_account":"COLL_ACC_01","is_fraud":1,"fraud_type":"Mule Collection","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.921,"ip_account_density":19},{"timestamp":"2025-07-02 10:06:00","txn_id":"FAN6","name":"Mule6","account_number":"MULE_ACC_6","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":5000.0,"ip_address":"103.50.181.18","device":"OnePlus 11","receiver_account":"COLL_ACC_01","is_fraud":1,"fraud_type":"Mule Collection","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.904,"ip_account_density":19},{"timestamp":"2025-07-02 10:07:00","txn_id":"FAN7","name":"Mule7","account_number":"MULE_ACC_7","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":5000.0,"ip_address":"103.50.181.18","device":"OnePlus 11","receiver_account":"COLL_ACC_01","is_fraud":1,"fraud_type":"Mule Collection","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.927,"ip_account_density":19},{"timestamp":"2025-07-02 15:00:00","txn_id":"LOOP1","name":"Alpha","account_number":"ACC_A","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":10000.0,"ip_address":"192.168.1.1","device":"OnePlus 11","receiver_account":"ACC_B","is_fraud":1,"fraud_type":"Mule Chain","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.903,"ip_account_density":3},{"timestamp":"2025-07-02 15:05:00","txn_id":"LOOP2","name":"Beta","account_number":"ACC_B","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":9900.0,"ip_address":"192.168.1.1","device":"OnePlus 11","receiver_account":"ACC_C","is_fraud":1,"fraud_type":"Mule Chain","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.961,"ip_account_density":3},{"timestamp":"2025-07-02 15:10:00","txn_id":"LOOP3","name":"Gamma","account_number":"ACC_C","account_type":"Savings","mobile_number":"9999999999","pincode":"600001","narration":"Transfer","trans_type":"UPI Payment","amount":9800.0,"ip_address":"192.168.1.1","device":"OnePlus 11","receiver_account":"ACC_A","is_fraud":1,"fraud_type":"Mule Chain","risk_score":90.0,"account_age_days":5.0,"receiver_name":"Target","receiver_pincode":"603202","velocity_l6h":1.0,"churn_rate":0.955,"ip_account_density":3}];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const BADGE = {
+  'Normal':'b-N','Mule Chain':'b-MC','Shared Device':'b-SD',
+  'High Velocity':'b-HV','Cross Channel':'b-CC',
+  'Mule Collection':'b-MX','Circular Loop':'b-CL'
+};
+const FT_COLOR = {
+  'Mule Chain':'#ffb700','Shared Device':'#c864ff',
+  'High Velocity':'#ff3c5a','Cross Channel':'#00d4ff',
+  'Mule Collection':'#ff6a00','Circular Loop':'#cc44ff'
+};
+
+// Clock
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN')},1000);
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function showTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nt').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='graph') setTimeout(renderGraph,100);
+}
+
+// ─── BUILD ALERT FEED ─────────────────────────────────────────────────────────
+const ALERTS = [
+  {sev:'crit',t:'🔴 Cross Channel: Saranya Venkat — Chennai+Delhi 45s',m:'2025-06-10 11:05 · churn:0.921 · Impossible travel · Risk:95',r:95},
+  {sev:'crit',t:'🔴 Circular Loop: Alpha→Beta→Gamma→Alpha',m:'2025-07-02 15:00–15:10 · IP:192.168.1.1 (VPN) · 5d accounts · Risk:93',r:93},
+  {sev:'crit',t:'🔴 Mule Collection: 8 Accounts → COLL_ACC_01',m:'2025-07-02 10:00–10:07 · IP:103.50.181.18 · age:5d · churn:0.94',r:90},
+  {sev:'crit',t:'🔴 High Velocity: Senthil Kumar 8 IMPS/4min',m:'2025-06-09 16:00–16:04 · velocity peaks at 9 · all <₹10K · Risk:93.5',r:93},
+  {sev:'crit',t:'🔴 Mule Chain: Arjun→Priya→Karthik ATM exit',m:'2025-06-05 14:00–14:01:40 · IP:103.161.159.227 · iPhone 14 · Risk:91',r:91},
+  {sev:'high',t:'⚠ Shared Device: Samsung S23 · 5 Accounts',m:'2025-06-07 10:30–38 · ip_density:14 · avg_churn:0.951 · Risk:86',r:86},
+  {sev:'high',t:'⚠ High Churn: Arun Menon — churn:0.983',m:'2025-06-07 10:34 · SHDEV0003 · Shared Device cluster',r:82},
+  {sev:'high',t:'⚠ High Churn: Priya Nair — churn:0.982',m:'2025-06-05 14:00:50 · MULE0002 · Mule Chain hop 2',r:88},
+  {sev:'high',t:'⚡ New Account Alert: MULE_ACC_0–7 age=5 days',m:'2025-07-02 · 8 throwaway accounts · Fan-In pattern',r:90},
+  {sev:'high',t:'⚡ IP Density Alert: 103.50.181.18 density=19',m:'16 accounts on same IP · HVEL + Fan-In combined',r:85},
+];
+(function buildAlerts(){
+  const feed = document.getElementById('alert-feed');
+  feed.innerHTML = ALERTS.map(a=>`
+    <div class="arow">
+      <div class="adot ${a.sev==='crit'?'crit':'high'}"></div>
+      <div style="flex:1">
+        <div class="atitle">${a.t}</div>
+        <div class="ameta">${a.m}</div>
+      </div>
+      <div class="ascore">${a.r}</div>
+    </div>`).join('');
+})();
+
+// ─── BUILD FRAUD BREAKDOWN BARS ───────────────────────────────────────────────
+(function buildBreakdown(){
+  const fraud = DATA.filter(d=>d.is_fraud===1);
+  const counts = {};
+  fraud.forEach(d=>{counts[d.fraud_type]=(counts[d.fraud_type]||0)+1;});
+  const total = fraud.length;
+  const html = Object.entries(counts).map(([ft,cnt])=>`
+    <div class="ftype-item">
+      <div class="ftype-hdr">
+        <span>${ft}</span>
+        <span style="color:${FT_COLOR[ft]||'#00d4ff'}">${cnt} txns · ${Math.round(cnt/total*100)}%</span>
+      </div>
+      <div class="btrack"><div class="bfill" style="width:0%;background:${FT_COLOR[ft]||'#00d4ff'}" data-w="${Math.round(cnt/total*100)}"></div></div>
+    </div>`).join('');
+  document.getElementById('breakdown').innerHTML = html;
+  setTimeout(()=>{
+    document.querySelectorAll('.bfill[data-w]').forEach(b=>{b.style.width=b.dataset.w+'%';});
+  },300);
+})();
+
+// ─── BUILD TRANSACTION TABLE ───────────────────────────────────────────────────
+function buildTable(data){
+  document.getElementById('txn-body').innerHTML = data.map(r=>`
+    <tr>
+      <td style="color:var(--accent)">${r.txn_id}</td>
+      <td>${r.timestamp.slice(0,16)}</td>
+      <td style="color:var(--text)">${r.name}</td>
+      <td style="color:var(--text2)">${r.account_number}</td>
+      <td style="color:var(--warn);font-family:'Rajdhani',sans-serif;font-weight:700">₹${r.amount.toLocaleString('en-IN')}</td>
+      <td style="color:var(--text3)">${r.device.slice(0,12)}</td>
+      <td style="color:var(--text3)">${r.ip_address}</td>
+      <td style="color:var(--text3)">${r.receiver_pincode||''}</td>
+      <td style="color:${r.velocity_l6h>=6?'var(--danger)':r.velocity_l6h>=3?'var(--warn)':'var(--text3)'}">${r.velocity_l6h}</td>
+      <td style="color:${r.churn_rate>=0.85?'var(--danger)':r.churn_rate>=0.5?'var(--warn)':'var(--text3)'}">${r.churn_rate.toFixed(3)}</td>
+      <td style="color:${r.ip_account_density>=15?'var(--danger)':r.ip_account_density>=10?'var(--warn)':'var(--text3)'}">${r.ip_account_density}</td>
+      <td style="color:${r.account_age_days<30?'var(--danger)':r.account_age_days<90?'var(--warn)':'var(--text3)'}">${r.account_age_days.toFixed(0)}</td>
+      <td><span class="badge ${BADGE[r.fraud_type]||'b-N'}">${r.fraud_type}</span></td>
+      <td style="color:${r.risk_score>=80?'var(--danger)':r.risk_score>=50?'var(--warn)':'var(--accent2)'};font-family:'Rajdhani',sans-serif;font-weight:700">${r.risk_score}</td>
+    </tr>`).join('');
+}
+buildTable(DATA);
+
+function filterTxn(){
+  const f1=document.getElementById('flt1').value;
+  const f2=document.getElementById('flt2').value;
+  let d=DATA;
+  if(f1!=='') d=d.filter(r=>r.is_fraud===parseInt(f1));
+  if(f2!=='') d=d.filter(r=>r.fraud_type===f2);
+  buildTable(d);
+}
+
+// ─── D3 FORCE GRAPH ───────────────────────────────────────────────────────────
+const GNODES = [
+  // Mule Chain
+  {id:'ARJUN',l:'Arjun Sharma',t:'mule',r:85,info:'Mule Chain #1 · churn:0.975 · ₹50K',ip:'103.161.159.227'},
+  {id:'PRIYA',l:'Priya Nair',t:'mule',r:88,info:'Mule Chain #2 · churn:0.982 · ₹48K',ip:'103.161.159.227'},
+  {id:'KARTHIK',l:'Karthik Rajan',t:'mule',r:91,info:'Mule Chain ATM exit · ₹46K',ip:'103.161.159.227'},
+  // Shared Device
+  {id:'MANOJ',l:'Manoj Patel',t:'shared',r:78,info:'Shared Device · Samsung S23 · ₹32K',ip:'103.221.93.148'},
+  {id:'REKHA',l:'Rekha Singh',t:'shared',r:80,info:'Shared Device · Samsung S23 · ₹28K',ip:'103.221.93.148'},
+  {id:'ARUN_M',l:'Arun Menon',t:'shared',r:82,info:'Shared Device · churn:0.983 · ₹35K',ip:'103.221.93.148'},
+  {id:'SINDHU',l:'Sindhu Rao',t:'shared',r:84,info:'Shared Device · Samsung S23 · ₹18K',ip:'103.221.93.148'},
+  {id:'BALAJI',l:'Balaji N.',t:'shared',r:86,info:'Shared Device · age:45d · ₹22K',ip:'103.221.93.148'},
+  // High Velocity
+  {id:'SENTHIL',l:'Senthil Kumar',t:'velocity',r:93,info:'8 IMPS in 4min · velocity peaks 9 · ₹77K',ip:'103.50.181.18'},
+  // Cross Channel
+  {id:'SARANYA',l:'Saranya Venkat',t:'cross',r:95,info:'Cross Channel · Chennai+Delhi 45s · ₹55K',ip:'103.21.219.60'},
+  // Fan-In Mules
+  {id:'M0',l:'Mule0',t:'fanin',r:90,info:'Fan-In · age:5d · churn:0.965 · ₹5K',ip:'103.50.181.18'},
+  {id:'M1',l:'Mule1',t:'fanin',r:90,info:'Fan-In · age:5d · churn:0.918 · ₹5K',ip:'103.50.181.18'},
+  {id:'M2',l:'Mule2',t:'fanin',r:90,info:'Fan-In · age:5d · churn:0.948 · ₹5K',ip:'103.50.181.18'},
+  {id:'M3',l:'Mule3',t:'fanin',r:90,info:'Fan-In · age:5d · churn:0.975 · ₹5K',ip:'103.50.181.18'},
+  {id:'M4',l:'Mule4',t:'fanin',r:90,info:'Fan-In · age:5d · churn:0.972 · ₹5K',ip:'103.50.181.18'},
+  {id:'M5',l:'Mule5',t:'fanin',r:90,info:'Fan-In · age:5d · churn:0.921 · ₹5K',ip:'103.50.181.18'},
+  {id:'M6',l:'Mule6',t:'fanin',r:90,info:'Fan-In · age:5d · churn:0.904 · ₹5K',ip:'103.50.181.18'},
+  {id:'M7',l:'Mule7',t:'fanin',r:90,info:'Fan-In · age:5d · churn:0.927 · ₹5K',ip:'103.50.181.18'},
+  {id:'COLL',l:'COLL_ACC_01',t:'collector',r:90,info:'Collector node · ₹40K received · degree centrality max',ip:'103.50.181.18'},
+  // Circular Loop
+  {id:'ACCA',l:'Alpha (A)',t:'circular',r:90,info:'Circular Loop · age:5d · churn:0.903 · ₹10K',ip:'192.168.1.1'},
+  {id:'ACCB',l:'Beta (B)',t:'circular',r:90,info:'Circular Loop · age:5d · churn:0.961 · ₹9.9K',ip:'192.168.1.1'},
+  {id:'ACCC',l:'Gamma (C)',t:'circular',r:91,info:'Circular Loop · age:5d · churn:0.955 · ₹9.8K',ip:'192.168.1.1'},
+  // IP Nodes
+  {id:'IP_CHAIN',l:'103.161.159.227',t:'ip',r:85,info:'Mule Chain IP · 3 accounts · ip_density:11',ip:'103.161.159.227'},
+  {id:'IP_SHARE',l:'103.221.93.148',t:'ip',r:80,info:'Shared Device IP · 5 accounts · ip_density:14',ip:'103.221.93.148'},
+  {id:'IP_VEL',l:'103.50.181.18',t:'ip',r:93,info:'HVEL + Fan-In IP · ip_density:19 · 16 accounts',ip:'103.50.181.18'},
+  {id:'IP_LOOP',l:'192.168.1.1',t:'ip',r:90,info:'Circular Loop IP · Private/VPN · ip_density:3',ip:'192.168.1.1'},
+  // Device Nodes
+  {id:'IPHONE14',l:'iPhone 14',t:'device',r:88,info:'Mule Chain device · links 3 accounts'},
+  {id:'SAMSUNG',l:'Samsung S23',t:'device',r:84,info:'Shared Device · links 5 accounts'},
+  {id:'LAPTOP',l:'Laptop-Chrome',t:'device',r:93,info:'High Velocity device'},
+  {id:'ONEPLUS',l:'OnePlus 11',t:'device',r:90,info:'Fan-In + Circular Loop device'},
+];
+const GLINKS = [
+  // Mule Chain
+  {s:'ARJUN',t:'PRIYA',e:'mule'},{s:'PRIYA',t:'KARTHIK',e:'mule'},
+  {s:'ARJUN',t:'IP_CHAIN',e:'ip'},{s:'PRIYA',t:'IP_CHAIN',e:'ip'},{s:'KARTHIK',t:'IP_CHAIN',e:'ip'},
+  {s:'ARJUN',t:'IPHONE14',e:'dev'},{s:'PRIYA',t:'IPHONE14',e:'dev'},
+  // Shared Device
+  {s:'MANOJ',t:'IP_SHARE',e:'ip'},{s:'REKHA',t:'IP_SHARE',e:'ip'},{s:'ARUN_M',t:'IP_SHARE',e:'ip'},
+  {s:'SINDHU',t:'IP_SHARE',e:'ip'},{s:'BALAJI',t:'IP_SHARE',e:'ip'},
+  {s:'MANOJ',t:'SAMSUNG',e:'dev'},{s:'REKHA',t:'SAMSUNG',e:'dev'},{s:'ARUN_M',t:'SAMSUNG',e:'dev'},
+  // High Velocity
+  {s:'SENTHIL',t:'IP_VEL',e:'ip'},{s:'SENTHIL',t:'LAPTOP',e:'dev'},
+  // Fan-In
+  {s:'M0',t:'COLL',e:'fanin'},{s:'M1',t:'COLL',e:'fanin'},{s:'M2',t:'COLL',e:'fanin'},
+  {s:'M3',t:'COLL',e:'fanin'},{s:'M4',t:'COLL',e:'fanin'},{s:'M5',t:'COLL',e:'fanin'},
+  {s:'M6',t:'COLL',e:'fanin'},{s:'M7',t:'COLL',e:'fanin'},
+  {s:'M0',t:'IP_VEL',e:'ip'},{s:'M1',t:'IP_VEL',e:'ip'},
+  {s:'M0',t:'ONEPLUS',e:'dev'},{s:'M1',t:'ONEPLUS',e:'dev'},
+  // Circular Loop
+  {s:'ACCA',t:'ACCB',e:'loop'},{s:'ACCB',t:'ACCC',e:'loop'},{s:'ACCC',t:'ACCA',e:'loop'},
+  {s:'ACCA',t:'IP_LOOP',e:'ip'},{s:'ACCA',t:'ONEPLUS',e:'dev'},
+];
+const NC={mule:'#ff3c5a',shared:'#c864ff',velocity:'#ffb700',cross:'#00d4ff',
+          fanin:'#ff6a00',circular:'#cc44ff',collector:'#ff4400',ip:'#00ff9d',device:'#7eb8ff'};
+const NR={mule:13,shared:12,velocity:15,cross:16,fanin:9,circular:12,collector:18,ip:9,device:10};
+let simRef, ggRef;
+
+function renderGraph(){
+  const cont=document.getElementById('gc');
+  const W=cont.clientWidth, H=cont.clientHeight;
+  d3.select('#gsvg').selectAll('*').remove();
+  const svg=d3.select('#gsvg').attr('width',W).attr('height',H);
+  const g=svg.append('g'); ggRef=g;
+  svg.call(d3.zoom().scaleExtent([.2,4]).on('zoom',e=>g.attr('transform',e.transform)));
+
+  const nodes=GNODES.map(n=>({...n}));
+  const links=GLINKS.map(l=>({source:l.s,target:l.t,e:l.e}));
+
+  simRef=d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(links).id(d=>d.id).distance(d=>{
+      if(d.e==='mule')return 80; if(d.e==='fanin')return 60;
+      if(d.e==='loop')return 70; return 55;
+    }))
+    .force('charge',d3.forceManyBody().strength(-220))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .force('collision',d3.forceCollide().radius(d=>NR[d.t]+14));
+
+  // Defs for arrow markers
+  const defs=svg.append('defs');
+  const makeArrow=(id,color)=>{
+    defs.append('marker').attr('id',id).attr('viewBox','0 -4 8 8')
+      .attr('refX',22).attr('refY',0).attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+      .append('path').attr('d','M0,-4L8,0L0,4').attr('fill',color).attr('opacity',.8);
+  };
+  makeArrow('arr-mule','#ff3c5a'); makeArrow('arr-fanin','#ff6a00');
+  makeArrow('arr-loop','#cc44ff'); makeArrow('arr-ip','#00ff9d66');
+  makeArrow('arr-dev','#7eb8ff55');
+
+  const link=g.append('g').selectAll('line').data(links).join('line')
+    .attr('stroke',d=>d.e==='mule'?'#ff3c5a':d.e==='fanin'?'#ff6a00aa':
+                       d.e==='loop'?'#cc44ffaa':d.e==='ip'?'#00ff9d44':'#7eb8ff33')
+    .attr('stroke-width',d=>(d.e==='mule'||d.e==='loop')?2.5:1.5)
+    .attr('stroke-dasharray',d=>d.e==='loop'?'5,3':'none')
+    .attr('opacity',d=>d.e==='mule'?.9:.65)
+    .attr('marker-end',d=>`url(#arr-${d.e==='dev'?'dev':d.e==='ip'?'ip':d.e})`);
+
+  const node=g.append('g').selectAll('g').data(nodes).join('g').attr('cursor','pointer')
+    .call(d3.drag()
+      .on('start',(e,d)=>{if(!e.active)simRef.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y;})
+      .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y;})
+      .on('end',(e,d)=>{if(!e.active)simRef.alphaTarget(0);d.fx=null;d.fy=null;}));
+
+  // Outer glow ring for high-risk
+  node.filter(d=>d.r>=85).append('circle')
+    .attr('r',d=>NR[d.t]+6).attr('fill','none')
+    .attr('stroke',d=>NC[d.t]).attr('stroke-width',.8).attr('opacity',.3)
+    .attr('stroke-dasharray','2,2');
+
+  node.append('circle')
+    .attr('r',d=>NR[d.t])
+    .attr('fill',d=>NC[d.t]+'2a')
+    .attr('stroke',d=>NC[d.t])
+    .attr('stroke-width',d=>d.r>=85?2.5:1.5);
+
+  node.append('text').attr('text-anchor','middle').attr('dy','0.35em')
+    .attr('font-size','9px').attr('fill',d=>NC[d.t])
+    .attr('font-family','Share Tech Mono,monospace').attr('pointer-events','none')
+    .text(d=>d.t==='ip'?'⬡':d.t==='device'?'▣':d.t==='collector'?'🎯':d.l.split(' ')[0].slice(0,6));
+
+  node.append('text').attr('text-anchor','middle').attr('dy',d=>NR[d.t]+12)
+    .attr('font-size','8px').attr('fill','#7aadcc')
+    .attr('font-family','Share Tech Mono,monospace').attr('pointer-events','none')
+    .text(d=>d.t==='ip'?d.l.slice(-8):d.l.slice(0,10));
+
+  // Tooltip
+  const ntt=document.getElementById('ntt');
+  node.on('mouseover',(e,d)=>{
+    ntt.style.display='block';
+    const rect=document.getElementById('gc').getBoundingClientRect();
+    ntt.style.left=Math.min(e.clientX-rect.left+15,rect.width-220)+'px';
+    ntt.style.top=Math.max(e.clientY-rect.top-10,0)+'px';
+    ntt.innerHTML=`<div class="ntt-title">${d.l}</div>
+      <div class="ntt-row"><span>Type</span><span>${d.t.toUpperCase()}</span></div>
+      <div class="ntt-row"><span>Risk Score</span><span style="color:${d.r>=85?'#ff3c5a':d.r>=60?'#ffb700':'#00ff9d'};font-weight:700">${d.r}</span></div>
+      <div class="ntt-row"><span>Details</span><span>${d.info}</span></div>
+      ${d.ip?`<div class="ntt-row"><span>IP</span><span>${d.ip}</span></div>`:''}`;
+  }).on('mouseout',()=>{ntt.style.display='none';});
+
+  simRef.on('tick',()=>{
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+        .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+
+  // Build node detail list
+  const sorted=[...GNODES].filter(n=>!['ip','device'].includes(n.t))
+    .sort((a,b)=>b.r-a.r).slice(0,8);
+  document.getElementById('nodelist').innerHTML=sorted.map(n=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:1px solid var(--border)">
+      <div style="width:10px;height:10px;border-radius:50%;background:${NC[n.t]};flex-shrink:0"></div>
+      <div style="flex:1"><div style="font-size:11px;color:var(--text)">${n.l}</div>
+        <div style="font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace">${n.info.slice(0,50)}</div></div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:${n.r>=85?'var(--danger)':'var(--warn)'}">${n.r}</div>
+    </div>`).join('');
+}
+
+function resetG(){if(simRef)simRef.alpha(1).restart();if(ggRef)ggRef.selectAll('circle').attr('opacity',1).attr('stroke-width',d=>d.r>=85?2.5:1.5);}
+function hiAll(){if(!ggRef)return;ggRef.selectAll('circle').attr('opacity',d=>d.r>70?1:.15).attr('stroke-width',d=>d.r>70?3.5:1);}
+function hiFanIn(){
+  if(!ggRef)return;
+  const s=new Set(['M0','M1','M2','M3','M4','M5','M6','M7','COLL','IP_VEL','ONEPLUS']);
+  ggRef.selectAll('circle').attr('opacity',d=>s.has(d.id)?1:.1).attr('stroke-width',d=>s.has(d.id)?4:1)
+    .attr('stroke',d=>s.has(d.id)?'#ff6a00':NC[d.t]);
+}
+function hiLoop(){
+  if(!ggRef)return;
+  const s=new Set(['ACCA','ACCB','ACCC','IP_LOOP','ONEPLUS']);
+  ggRef.selectAll('circle').attr('opacity',d=>s.has(d.id)?1:.1).attr('stroke-width',d=>s.has(d.id)?4:1)
+    .attr('stroke',d=>s.has(d.id)?'#cc44ff':NC[d.t]);
+}
+function hiChain(){
+  if(!ggRef)return;
+  const s=new Set(['ARJUN','PRIYA','KARTHIK','IP_CHAIN','IPHONE14']);
+  ggRef.selectAll('circle').attr('opacity',d=>s.has(d.id)?1:.1).attr('stroke-width',d=>s.has(d.id)?4:1)
+    .attr('stroke',d=>s.has(d.id)?'#ff3c5a':NC[d.t]);
+}
+
+// ─── AI CHATBOT ───────────────────────────────────────────────────────────────
+const SYSTEM = `You are IntelliTrace AI v2, a fraud detection expert analyst for a hackathon prototype.
+
+DATASET: mule_detection_enhanced.csv — 229 transactions, 29 fraud, 22 columns
+NEW columns vs v1: account_age_days, receiver_name, receiver_pincode, velocity_l6h, churn_rate, ip_account_density
+
+6 FRAUD PATTERNS:
+1. MULE CHAIN (MULE0001-MULE0003): Arjun Sharma→Priya Nair→Karthik Rajan→ATM in 1m40s. IP:103.161.159.227, iPhone 14. Churn: 0.975/0.982/0.943. Amounts: ₹50K→₹48K→₹46K. Risk: 85-91.
+2. SHARED DEVICE (SHDEV0001-0005): Samsung S23 used by 5 accounts in 8 minutes. IP:103.221.93.148, ip_density:14. Churn avg:0.951. Total ₹1.35L. Risk: 78-86.
+3. HIGH VELOCITY (HVEL0001-0008): Senthil Kumar 8 IMPS in 4 min, velocity_l6h escalates 2→9, all <₹10K (structuring). IP:103.50.181.18, ip_density:19. Total ₹77,120. Risk: 90-93.5.
+4. CROSS CHANNEL (CROSS001-002): Saranya Venkat - ATM Chennai 11:05:00 + Net Banking Delhi 11:05:45 = 45s apart. Impossible travel. Risk: 95.
+5. MULE COLLECTION/FAN-IN (FAN0-FAN7): 8 mule accounts (Mule0-Mule7) all → COLL_ACC_01. All accounts age:5d, churn:0.904-0.975. IP:103.50.181.18. ₹40,000 in 7 min. Risk: 90. NEW PATTERN.
+6. CIRCULAR LOOP (LOOP1-LOOP3): Alpha(ACC_A)→Beta(ACC_B)→Gamma(ACC_C)→Alpha. IP:192.168.1.1 (private/VPN), diminishing amounts ₹10K→₹9.9K→₹9.8K (₹100 fee per hop). All age:5d. Risk: 90-93.
+
+SIGNAL MEANINGS:
+- churn_rate > 0.85: money exits account rapidly = mule behavior. All fraud avg: 0.94.
+- velocity_l6h: transactions in last 6 hours. Escalating = burst attack.
+- ip_account_density: how many accounts share this IP. Dense = controlled network.
+- account_age_days < 30: throwaway/mule account. Fan-in and loop accounts all 5 days old.
+- receiver_pincode != sender pincode: cross-region transfer flag.
+
+Answer professionally and concisely. Use ₹ for Indian rupees.`;
+
+async function sendChat(){
+  const inp=document.getElementById('chat-in');
+  const msg=inp.value.trim(); if(!msg)return; inp.value='';
+  const box=document.getElementById('chatmsgs');
+  box.innerHTML+=`<div class="cmsg user"><div class="cmsender user">YOU</div>${msg}</div>`;
+  const tp=document.createElement('div'); tp.className='cmsg bot';
+  tp.innerHTML='<div class="cmsender bot">🤖 INTELLITRACE AI v2</div><div class="typing"><span></span><span></span><span></span></div>';
+  box.appendChild(tp); box.scrollTop=box.scrollHeight;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:800,
+        system:SYSTEM,
+        messages:[{role:'user',content:msg}]
+      })
+    });
+    const data=await resp.json();
+    const reply=data.content?.map(c=>c.text||'').join('')||'No response.';
+    tp.innerHTML=`<div class="cmsender bot">🤖 INTELLITRACE AI v2</div>${reply.replace(/
+/g,'<br>')}`;
+  }catch(e){
+    // Fallback responses
+    const q=msg.toLowerCase();
+    let r='Based on the enhanced dataset: 229 transactions, 29 fraud across 6 patterns. New patterns: Mule Collection (8 accounts→COLL_ACC_01, age:5d) and Circular Loop (A→B→C→A). New signals: churn_rate (fraud avg 0.94), velocity_l6h (peaks 9), ip_account_density (max 19), account_age_days (min 5d).';
+    if(q.includes('churn')) r='📉 churn_rate measures how quickly money exits an account (0–1). Values >0.85 indicate mule behavior — money is relayed, not kept. In our dataset, all fraud accounts have churn >0.90. Highest: Arun Menon (0.983), Priya Nair (0.982). Fan-In mules average 0.940.';
+    else if(q.includes('velocity')) r='⚡ velocity_l6h counts transactions by an account in the last 6 hours. Normal accounts show 1–2. High Velocity attack: Senthil Kumar escalates from 2 to 9 over 8 IMPS in 4 minutes. Rule: vel≥3 monitor, vel≥6 block, vel≥9 critical freeze.';
+    else if(q.includes('fan')||q.includes('collection')) r='🟠 Mule Collection (Fan-In): 8 accounts (Mule0–Mule7) all created 5 days ago, churn 0.90+, all send ₹5,000 via UPI to COLL_ACC_01 within 7 minutes from IP 103.50.181.18. Collector node has highest degree centrality in graph. Total collected: ₹40,000.';
+    else if(q.includes('loop')||q.includes('circular')) r='🟣 Circular Loop: Alpha→Beta→Gamma→Alpha. Cyclic laundering — each hop extracts ₹100 fee (₹10K→₹9.9K→₹9.8K). All 3 accounts age 5 days, churn 0.903–0.961, private IP 192.168.1.1 (VPN). Funds appear to "vanish" due to circular flow.';
+    else if(q.includes('mule chain')) r='🔴 Mule Chain: Arjun Sharma→Priya Nair→Karthik Rajan ATM exit in 1m40s. Same IP (103.161.159.227) and iPhone 14 all 3 hops. Churn: 0.975/0.982/0.943 — all near 1.0. Amounts step down: ₹50K→₹48K→₹46K. Classic layering phase.';
+    else if(q.includes('highest risk')||q.includes('top risk')) r='Top risk accounts: (1) Saranya Venkat 95.0 – Cross Channel. (2) Karthik Rajan 91.0 – Mule Chain exit. (3) Senthil Kumar 93.5 – High Velocity. (4) Mule Collection accounts 90.0 – Fan-In. (5) Circular Loop accounts 90–93.';
+    tp.innerHTML=`<div class="cmsender bot">🤖 INTELLITRACE AI v2</div>${r}`;
+  }
+  box.scrollTop=box.scrollHeight;
+}
+function qsend(m){document.getElementById('chat-in').value=m;sendChat();}
+</script>
+</body>
+</html>
