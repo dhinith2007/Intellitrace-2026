@@ -421,7 +421,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 
   <!-- STORY 1 -->
   <div class="sp">
-    <div class="stitle">🔥 FRAUD #1 — Mule Chain: Arjun → Priya → Karthik (ATM)</div>
+    <div class="stitle">FRAUD #1 — Mule Chain: Arjun → Priya → Karthik (ATM)</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:10px;font-family:'Share Tech Mono',monospace">2025-06-05 14:00–14:01:40 · IP: 103.161.159.227 · iPhone 14 · churn: 0.975/0.982/0.943</div>
     <div class="chain">
       <div class="cn">Arjun Sharma<span class="ct">14:00:00 · ₹50K · churn:0.975</span></div>
@@ -439,7 +439,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 
   <!-- STORY 2 -->
   <div class="sp">
-    <div class="stitle">🔥 FRAUD #2 — Shared Device: Samsung S23</div>
+    <div class="stitle">FRAUD #2 — Shared Device: Samsung S23</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:10px;font-family:'Share Tech Mono',monospace">
       2025-06-07 10:30 – 10:38 · Risk: 86 · IP: 103.78.90.12 · 5 accounts in 8 min
     </div>
@@ -458,7 +458,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 
    <!-- STORY 3 -->
   <div class="sp">
-    <div class="stitle">🔥 FRAUD #3 — High Velocity: 8 IMPS in 4 min</div>
+    <div class="stitle">FRAUD #3 — High Velocity: 8 IMPS in 4 min</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-family:'Share Tech Mono',monospace">Senthil Kumar · velocity_l6h climbs 2→9 · All &lt;₹10K</div>
     <div style="background:var(--bg3);border-radius:6px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:10px">
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
@@ -474,7 +474,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 
   <!-- STORY 4 -->
   <div class="sp" style="border-color:rgba(0, 212, 255, 0.4)">
-    <div class="stitle" style="color:var(--accent)">🔥 FRAUD #4 — Cross Channel: Saranya Venkat</div>
+    <div class="stitle" style="color:var(--accent)">FRAUD #4 — Cross Channel: Saranya Venkat</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:12px;font-family:'Share Tech Mono',monospace">
       2025-06-10 11:05:00 · Chennai + Delhi in 45 seconds · impossible travel
     </div>
@@ -510,7 +510,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 
   <!-- STORY 5 -->
   <div class="sp" style="margin-top:12px">
-    <div class="stitle">🔥 FRAUD #5 (NEW) — Mule Collection: 8 Accounts → Collector</div>
+    <div class="stitle">FRAUD #5 (NEW) — Mule Collection: 8 Accounts → Collector</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:12px;font-family:'Share Tech Mono',monospace">
       2025-07-02 10:00–10:07 · IP: 103.50.181.18 · OnePlus 11 · account_age: 5 days · churn: 0.904–0.975
     </div>
@@ -538,7 +538,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 
   <!-- STORY 6 -->
   <div class="sp" style="border-color:rgba(255,0,255,.4)">
-    <div class="stitle" style="color:var(--purple)">🔥 FRAUD #6 (NEW) — Circular Loop: Alpha → Beta → Gamma → Alpha</div>
+    <div class="stitle" style="color:var(--purple)">FRAUD #6 (NEW) — Circular Loop: Alpha → Beta → Gamma → Alpha</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:12px;font-family:'Share Tech Mono',monospace">
       2025-07-02 15:00–15:10 · IP: 192.168.1.1 · OnePlus 11 · cyclic fund laundering
     </div>
