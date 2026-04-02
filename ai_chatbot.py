@@ -66,24 +66,42 @@ Use bullet points for complex answers. Keep answers concise but complete.
 # ─── FALLBACK RESPONSES ───────────────────────────────────────────────────────
 # ─── FALLBACK RESPONSES (THE "BULLETPROOF DEMO" DICTIONARY) ───────────────────
 # ─── FALLBACK RESPONSES (THE "BULLETPROOF DEMO" DICTIONARY) ───────────────────
+# ─── FALLBACK RESPONSES (THE "BULLETPROOF DEMO" DICTIONARY) ───────────────────
 
 FALLBACK_RESPONSES = {
     "architecture": (
         "[AI ANALYSIS] 🧠 **IntelliTrace v2: System Architecture & Methodology**<br><br>"
         "**1. The Problem Statement:**<br>"
-        "Traditional tabular ML models look at transactions in isolation, missing coordinated, multi-hop money laundering. We built a system to detect hidden crime syndicates using behavioral signals and graph theory.<br><br>"
+        "Traditional tabular ML models look at transactions in isolation. We built a system to detect hidden crime syndicates using behavioral signals and graph theory.<br><br>"
         "**2. Dataset & Transaction Simulation:**<br>"
-        "We engineered a Python-based Transaction Simulator to generate a highly realistic, synthetic Indian banking dataset (IMPS, UPI, ATM). It contains 229 transactions, meticulously planting 6 complex fraud typologies (Mule Chains, Circular Loops, Fan-Ins).<br><br>"
+        "We engineered a Python-based Transaction Simulator to generate a highly realistic, synthetic Indian banking dataset. It contains 229 transactions, planting 6 complex fraud typologies.<br><br>"
         "**3. Graph Intelligence Engine (NetworkX):**<br>"
-        "We used Python's `NetworkX` library to map the dataset into a Directed Graph. Accounts act as Nodes; transactions act as Edges. By running cycle-detection and degree-centrality algorithms, we mathematically unearth hidden loops and collector accounts that standard rules miss.<br><br>"
+        "We used Python's `NetworkX` to map the dataset into a Directed Graph. By running cycle-detection algorithms, we mathematically unearth hidden loops.<br><br>"
         "**4. The Unified Dashboard (Flask + D3.js):**<br>"
-        "We built a monolithic Flask web application to serve as the SOC Command Terminal. It features real-time telemetry, risk scoring, and an interactive `D3.js` network graph to visualize the illicit money flow.<br><br>"
-        "**5. AI SOC Assistant (LLM Integration):**<br>"
-        "We embedded an LLM directly into the dashboard. It acts as a context-aware co-pilot, parsing the graph data to instantly explain complex fraud stories, analyze signals like `churn_rate`, and recommend containment actions.<br><br>"
-        "**6. Core Tech Stack:**<br>"
-        "• **Backend:** Python, Flask, NetworkX, Pandas<br>"
-        "• **Frontend:** Pure HTML/CSS, Vanilla JS, D3.js (Data Vis)<br>"
-        "• **AI/ML:** OpenAI SDK routing via OpenRouter API"
+        "We built a monolithic Flask web application to serve as the SOC Command Terminal with an interactive `D3.js` network graph.<br><br>"
+        "**5. Core Tech Stack:**<br>"
+        "• Backend: Python, Flask, NetworkX, Pandas<br>"
+        "• Frontend: HTML/CSS, JS, D3.js<br>"
+        "• AI/ML: OpenAI SDK routing via OpenRouter"
+    ),
+    "team": (
+        "[AI ANALYSIS] 👨‍💻 **Who built this?**<br><br>"
+        "This IntelliTrace v2 Dashboard and AI model were engineered by **Team Cyber Dynamos** for the 2026 Hackathon."
+    ),
+    "dataset": (
+        "[AI ANALYSIS] 🗄️ **About the Dataset:**<br><br>"
+        "We utilized a dataset containing 229 transactions simulating Indian banking channels (IMPS, UPI, ATM).<br>"
+        "It contains 29 confirmed fraud cases (12.6% fraud rate) engineered to represent complex, multi-hop network typologies."
+    ),
+    "problem": (
+        "[AI ANALYSIS] 🎯 **Problem Statement:**<br><br>"
+        "Traditional rule-based engines look at transactions in isolation and miss multi-hop, coordinated money laundering.<br>"
+        "Our objective is to detect hidden networks, circular loops, and mule chains in real-time."
+    ),
+    "gnn": (
+        "[AI ANALYSIS] 🧠 **Proposed GNN Model:**<br><br>"
+        "We are proposing a Graph Neural Network (GNN). Accounts act as nodes, and transactions are edges.<br>"
+        "By analyzing the graph structure (cycles, fan-ins) alongside node features (churn_rate, velocity), the GNN mathematically uncovers hidden crime syndicates."
     ),
     "patterns": (
         "[AI ANALYSIS] [SEARCH] **6 Fraud Patterns Detected:**<br><br>"
@@ -140,7 +158,7 @@ FALLBACK_RESPONSES = {
     "churn": (
         "[AI ANALYSIS] [METRIC] **Churn Rate:**<br><br>"
         "Measures how fast money leaves an account after entering.<br>"
-        "High churn (>0.90) means the account is acting as a 'pass-through' mule, rather than holding standard balances."
+        "High churn (>0.90) means the account is acting as a 'pass-through' mule."
     ),
     "density": (
         "[AI ANALYSIS] [METRIC] **IP Account Density:**<br><br>"
@@ -149,7 +167,7 @@ FALLBACK_RESPONSES = {
     ),
     "default": (
         "[SYSTEM MESSAGE]<br>I am running in Standalone / High-Speed Mode. You can ask me about:<br><br>"
-        "• How the model works (Architecture, Methodology, Tech Stack)<br>"
+        "• How the model works (Architecture, GNN, Dataset, Team)<br>"
         "• Specific stories (Mule chain, Circular loop, Shared device, Fan-in)<br>"
         "• Signals (Churn rate, Velocity, IP density)"
     )
@@ -159,10 +177,14 @@ def _fallback_response(query: str) -> str:
     """Smart keyword mapping to return the exact right answer."""
     q = query.lower()
     
-    # NEW: Triggers for the comprehensive Architecture & Methodology response
-    if "explain about the model" in q or "architecture" in q or "methodology" in q or "tech stack" in q or "how did you build" in q or "how it works" in q or "problem statement" in q or "dataset" in q: 
-        return FALLBACK_RESPONSES["architecture"]
+    # 1. Project Info & Methodology
+    if "who" in q or "built" in q or "team" in q or "dynamos" in q: return FALLBACK_RESPONSES["team"]
+    if "dataset" in q or "data" in q: return FALLBACK_RESPONSES["dataset"]
+    if "problem" in q or "statement" in q: return FALLBACK_RESPONSES["problem"]
+    if "gnn" in q or "graph" in q: return FALLBACK_RESPONSES["gnn"]
+    if "explain about the model" in q or "architecture" in q or "methodology" in q or "tech stack" in q or "how it works" in q: return FALLBACK_RESPONSES["architecture"]
         
+    # 2. Fraud Patterns & Stories
     if "pattern" in q or "stories" in q or "all 6" in q: return FALLBACK_RESPONSES["patterns"]
     if "risk" in q or "highest" in q: return FALLBACK_RESPONSES["risk"]
     if "mule chain" in q or "story 1" in q: return FALLBACK_RESPONSES["mule chain"]
@@ -171,6 +193,8 @@ def _fallback_response(query: str) -> str:
     if "cross channel" in q or "impossible" in q: return FALLBACK_RESPONSES["cross channel"]
     if "fan-in" in q or "collection" in q or "story 5" in q: return FALLBACK_RESPONSES["fan-in"]
     if "circular" in q or "loop" in q or "story 6" in q: return FALLBACK_RESPONSES["circular"]
+    
+    # 3. Signals
     if "churn" in q: return FALLBACK_RESPONSES["churn"]
     if "density" in q or "ip " in q: return FALLBACK_RESPONSES["density"]
     
