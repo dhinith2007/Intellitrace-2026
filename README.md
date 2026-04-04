@@ -281,7 +281,7 @@ python dashboard.py
 This project demonstrates how **Graph Intelligence + Machine Learning + AI Assistants** can revolutionize fraud detection by shifting from:
 
 👉 **Isolated Transactions → Connected Intelligence**
-
+Live Deployed Prototype->https://intellitrace-2026.onrender.com/
 ---
 
 ⭐ If you like this project, give it a star!
